@@ -1,0 +1,248 @@
+\documentclass[12pt]{article}
+\usepackage[spanish]{babel}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{geometry}
+\geometry{margin=1in}
+
+\title{PWA Arroyo Seco: Requerimientos, Arquitectura en VPS y Plan de Desarrollo Scrum}
+\author{Comunidad Arroyo Seco — Equipo IDSG 11}
+\date{\today}
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+\section{Introducción}
+La comunidad de Arroyo Seco carece de una plataforma digital que centralice la oferta turística local (alojamiento, gastronomía, recorridos, transporte y experiencias culturales). Este documento define los \textbf{requerimientos}, \textbf{artefactos}, \textbf{arquitectura para despliegue en un VPS} y el \textbf{plan Scrum} para construir una \textbf{PWA offline-first}, capaz de operar con conectividad limitada mediante \textit{Service Worker} y \textit{Background Sync}.
+
+\section{Objetivo y Alcance del MVP}
+\subsection{Objetivo}
+Diseñar e implementar una \textbf{PWA} para \textbf{Arroyo Seco} que permita:
+\begin{itemize}[nosep]
+  \item Publicación y gestión de servicios turísticos por anfitriones locales.
+  \item Búsqueda, filtrado y consulta de servicios aun \underline{sin conexión}.
+  \item Solicitud de reservas con \textit{cola offline} y sincronización al recuperar conectividad.
+  \item Notificaciones web (push) para confirmaciones, cambios de estado y mensajes.
+\end{itemize}
+
+\subsection{Alcance del MVP}
+\begin{itemize}[nosep]
+  \item Registro/login con control de roles (visitante, anfitrión, admin).
+  \item Publicación de alojamientos/experiencias con imágenes, ubicación y disponibilidad.
+  \item Búsqueda y filtros por categoría, precio, ubicación y fecha.
+  \item \textbf{Offline-first}: precache del \textit{app shell}, cache de listados/detalles e \textit{background sync} para reservas.
+  \item Solicitud de reserva (captura de pago \emph{online} en versiones posteriores).
+  \item Mensajería interna básica y reseñas.
+  \item Panel mínimo de administración (gestión de usuarios y servicios).
+\end{itemize}
+
+\section{Requerimientos}
+\subsection{Funcionales}
+\begin{enumerate}[label=\textbf{F-\arabic*}, left=0pt, itemsep=4pt]
+  \item \textbf{Gestión de usuarios y roles}: registro, login, edición de perfil, recuperación de contraseña; roles y permisos diferenciados.
+  \item \textbf{Verificación de anfitriones}: flujo KYC ligero (documentos/fotos), aprobación manual por admin.
+  \item \textbf{Publicación de servicios}: CRUD de alojamientos/experiencias; categorías, etiquetas, ubicación (lat/long), galería de imágenes.
+  \item \textbf{Disponibilidad}: calendario por servicio; reglas de capacidad; bloqueo de fechas.
+  \item \textbf{Búsqueda y filtros}: por ubicación, precio, categoría, disponibilidad; ordenamiento por relevancia/calificación.
+  \item \textbf{Favoritos y preferencias}: listas de favoritos y perfil de intereses.
+  \item \textbf{Reservas}: creación de solicitud con estados \emph{pending}/\emph{confirmed}/\emph{cancelled}; historial de reservas.
+  \item \textbf{Mensajería interna}: hilos entre anfitrión y visitante; moderación básica.
+  \item \textbf{Reseñas bidireccionales}: calificación y comentarios; promedio visible; reportes de abuso.
+  \item \textbf{Notificaciones}: push y email transaccional (alta, confirmación de reserva, cambios).
+  \item \textbf{Offline-first}: 
+    \begin{itemize}[nosep]
+      \item Navegación del \textit{app shell} y listados en \emph{modo offline}.
+      \item Cache de detalles, imágenes y resultados recientes.
+      \item \textit{Background Sync} para colas de POST (reservas, mensajes) y reintentos idempotentes.
+      \item UI de estado de conectividad y resolución de conflictos.
+    \end{itemize}
+  \item \textbf{Administración}: gestión de usuarios, servicios, reseñas y contenido reportado.
+\end{enumerate}
+
+\subsection{No Funcionales}
+\begin{enumerate}[label=\textbf{NF-\arabic*}, left=0pt, itemsep=4pt]
+  \item \textbf{Rendimiento}: p95 respuesta API $<$ 3s; p99 $<$ 5s; \textit{first load} PWA $<$ 3s (red 3G rápida).
+  \item \textbf{Disponibilidad}: objetivo $\geq$ 99.5\% mensual; ventanas de mantenimiento planificadas.
+  \item \textbf{Offline-first}: \textit{Service Worker} con \textbf{precaching} (app shell) y \textbf{runtime caching}:
+    \begin{itemize}[nosep]
+      \item Estrategia \emph{Stale-While-Revalidate} para JSON de listados/detalles.
+      \item Estrategia \emph{Cache-First} para imágenes y estáticos.
+      \item \textit{Background Sync} para operaciones críticas (reservas/mensajes).
+    \end{itemize}
+  \item \textbf{Seguridad}: TLS, hashing de contraseñas (Argon2/bcrypt), JWT con expiración y rotación, rate limiting, validación de entrada, logs/auditoría.
+  \item \textbf{Privacidad y cumplimiento}: LFPDPPP (MX); política de privacidad, términos y retención de datos; consentimiento para geolocalización y notificaciones.
+  \item \textbf{Compatibilidad y Accesibilidad}: WCAG 2.1 AA; soporte Chrome/Firefox/Safari/Edge; responsive móvil/escritorio.
+  \item \textbf{Escalabilidad}: arquitectura modular, caché Redis, CDN opcional para estáticos.
+  \item \textbf{Observabilidad}: métricas (tiempo de respuesta, error rate), alertas y trazabilidad.
+\end{enumerate}
+
+\section{Artefactos del Proyecto}
+\begin{itemize}[left=0pt, itemsep=4pt]
+  \item \textbf{Cliente PWA} (React/Vite): UI responsive, \textit{Service Worker}, \textit{Background Sync}, Web Push.
+  \item \textbf{API Backend} (Node.js/Express): autenticación, servicios, disponibilidad, reservas, mensajería, notificaciones.
+  \item \textbf{Panel de Administración} (React): gestión de usuarios y contenido.
+  \item \textbf{Base de Datos} (PostgreSQL): usuarios, perfiles, servicios, disponibilidad, reservas, reseñas, mensajes, notificaciones.
+  \item \textbf{Caché y Colas} (Redis): caché de lectura y colas de reintentos.
+  \item \textbf{Reverse Proxy} (Nginx): TLS, terminación HTTPS, rutas y compresión.
+  \item \textbf{Service Worker}: \textbf{precaching}, \textbf{runtime caching}, \textbf{background sync}, \textbf{fallback offline}.
+  \item \textbf{Notificaciones Web} (VAPID): envío de Web Push desde backend.
+  \item \textbf{CDN opcional} (estáticos e imágenes) según presupuesto.
+  \item \textbf{Documentación Técnica}: OpenAPI/Swagger, manual de usuario, manual de despliegue.
+  \item \textbf{CI/CD} (GitHub Actions): build, test y deploy automatizado al VPS.
+\end{itemize}
+
+\section{Arquitectura para Despliegue en VPS}
+\subsection{Componentes}
+\begin{itemize}[left=0pt, itemsep=4pt]
+  \item \textbf{VPS} (Ubuntu 22.04+): 2 vCPU, 4GB RAM, 80GB SSD (mínimo).
+  \item \textbf{Nginx} como reverse proxy: HTTPS (Certbot/Let's Encrypt), HTTP/2, gzip/brotli.
+  \item \textbf{PWA estática}: servido por Nginx desde \texttt{/var/www/arroyo-seco}.
+  \item \textbf{API Backend} Node/Express: detrás de Nginx, ejecutado con PM2 o Docker.
+  \item \textbf{PostgreSQL}: en VPS o gestionado externamente; backups diarios.
+  \item \textbf{Redis}: caché y colas de reintentos.
+  \item \textbf{Almacenamiento de imágenes}: disco con Nginx y \texttt{Cache-Control}; CDN opcional.
+\end{itemize}
+
+\subsection{Topología Lógica}
+\begin{itemize}[left=0pt, itemsep=4pt]
+  \item Cliente (PWA) $\leftrightarrow$ Nginx (443) $\to$ rutas:
+    \begin{itemize}[nosep]
+      \item \texttt{/} PWA estática.
+      \item \texttt{/api} proxy a Node/Express.
+      \item \texttt{/images} archivos estáticos con cache.
+    \end{itemize}
+  \item Node/Express $\leftrightarrow$ PostgreSQL (TCP 5432), Redis (TCP 6379).
+  \item Web Push: VAPID keys en backend; suscripciones almacenadas en DB.
+\end{itemize}
+
+\subsection{Offline-first (Service Worker)}
+\begin{itemize}[left=0pt, itemsep=4pt]
+  \item \textbf{Precache}: \textit{app shell} (HTML, CSS, JS) y rutas críticas.
+  \item \textbf{Runtime caching}:
+    \begin{itemize}[nosep]
+      \item JSON listados/detalles: \emph{Stale-While-Revalidate}.
+      \item Imágenes: \emph{Cache-First} con expiración (ej. 30 días).
+    \end{itemize}
+  \item \textbf{Background Sync}:
+    \begin{itemize}[nosep]
+      \item Cola local (IndexedDB) para POST de \texttt{/api/reservations} y \texttt{/api/messages}.
+      \item Reintentos con backoff y idempotencia (\texttt{X-Request-Id}).
+    \end{itemize}
+  \item \textbf{Fallback offline}: páginas \emph{offline.html} y estados de conectividad visibles.
+\end{itemize}
+
+\subsection{Seguridad y Operación}
+\begin{itemize}[left=0pt, itemsep=4pt]
+  \item TLS (Let's Encrypt), \texttt{HSTS}, \texttt{X-Content-Type-Options}, \texttt{Content-Security-Policy}.
+  \item Backend: JWT (expiración corta, refresh), hashing Argon2/bcrypt, rate limiting, validación de entrada, auditoría.
+  \item Backups: DB diarios con retención 7-30 días; pruebas de restauración.
+  \item Observabilidad: logs estructurados (JSON), métricas (p95, errores), alertas (CPU/RAM/Uptime).
+\end{itemize}
+
+\section{Plan de Desarrollo Scrum}
+\subsection{Roles}
+\begin{itemize}[left=0pt, itemsep=4pt]
+  \item \textbf{Product Owner (PO)}: Hugo Miralrío Espinoza.
+  \item \textbf{Scrum Master (SM)}: María Dolores Salinas Jiménez.
+  \item \textbf{Arquitecto de Software}: Ricardo Torres Jiménez.
+  \item \textbf{Desarrollador Principal}: Hernán Serrano Cruz.
+\end{itemize}
+
+\subsection{Artefactos Scrum}
+\begin{itemize}[left=0pt, itemsep=4pt]
+  \item \textbf{Product Backlog}: historias priorizadas (Must/Should/Could).
+  \item \textbf{Sprint Backlog}: tareas comprometidas por sprint.
+  \item \textbf{Incremento}: PWA funcional al final de cada sprint.
+  \item \textbf{Definition of Ready (DoR)}: historia con criterio de aceptación, mock, datos de prueba.
+  \item \textbf{Definition of Done (DoD)}: código revisado, probado (unit/integración), accesibilidad validada, documentación actualizada y \textbf{deploy en staging}.
+\end{itemize}
+
+\subsection{Sprints (2 semanas c/u; 4 sprints — 8 semanas)}
+\paragraph{Sprint 1: Fundamentos y Offline Shell}
+\begin{itemize}[left=0pt, itemsep=2pt]
+  \item Repositorio y CI/CD; Nginx/TLS en VPS; Docker/PM2.
+  \item Backend base (auth, usuarios/roles); esquema inicial en PostgreSQL.
+  \item PWA base (React/Vite) con \textbf{Service Worker} y \textbf{precaching}.
+  \item Búsqueda/listados y detalle de servicios (mock → API real).
+  \item Métricas y logs básicos; \textbf{criterios}: p95 $<$ 3s en listados.
+\end{itemize}
+
+\paragraph{Sprint 2: Publicación y Disponibilidad}
+\begin{itemize}[left=0pt, itemsep=2pt]
+  \item CRUD de servicios con imágenes; verificación de anfitriones (KYC ligero).
+  \item Calendario de disponibilidad y reglas de capacidad.
+  \item \textbf{Runtime caching} para JSON e imágenes; fallback offline.
+  \item Panel mínimo de administración.
+\end{itemize}
+
+\paragraph{Sprint 3: Reservas, Mensajería y Notificaciones}
+\begin{itemize}[left=0pt, itemsep=2pt]
+  \item Flujo de reservas con estados y historial; idempotencia y reintentos.
+  \item Mensajería interna; moderación básica.
+  \item Web Push (VAPID) y email transaccional.
+  \item \textbf{Background Sync}: colas para POST de reservas/mensajes.
+\end{itemize}
+
+\paragraph{Sprint 4: Calidad, Accesibilidad y Despliegue}
+\begin{itemize}[left=0pt, itemsep=2pt]
+  \item Pruebas unitarias/integración/E2E (Cypress/Playwright).
+  \item Accesibilidad WCAG 2.1 AA (axe/Lighthouse); performance (p95/p99).
+  \item Observabilidad y alertas; backups; documentación final.
+  \item \textbf{MVP desplegado} en VPS y validado con comunidad.
+\end{itemize}
+
+\subsection{Cadencias}
+\begin{itemize}[left=0pt, itemsep=4pt]
+  \item \textbf{Daily} 15 min; \textbf{Sprint Planning} (2h), \textbf{Review} (1h), \textbf{Retro} (1h).
+  \item \textbf{Revisión de métricas semanal}: rendimiento, errores, adopción.
+\end{itemize}
+
+\section{Plan de Pruebas y Métricas}
+\subsection{Pruebas}
+\begin{itemize}[left=0pt, itemsep=4pt]
+  \item \textbf{Unitarias}: funciones de negocio (reservas, disponibilidad).
+  \item \textbf{Integración}: API/DB; idempotencia y reintentos.
+  \item \textbf{E2E}: registro, publicación, búsqueda, reserva, mensajería.
+  \item \textbf{Offline}: precache, runtime caching, \textit{background sync}, fallback.
+  \item \textbf{Accesibilidad y Performance}: Lighthouse p95/p99, axe WCAG AA.
+\end{itemize}
+
+\subsection{KPIs}
+\begin{itemize}[left=0pt, itemsep=4pt]
+  \item \textbf{Rendimiento}: p95 API $<$ 3s; error rate $<$ 1\%; TTI PWA $<$ 3s.
+  \item \textbf{Disponibilidad}: uptime $\geq$ 99.5\%.
+  \item \textbf{Uso offline}: \% de solicitudes sincronizadas con éxito $\geq$ 95\%.
+  \item \textbf{Calidad}: CSAT $\geq$ 80\%; reseñas promedio $\geq$ 4.2/5.
+\end{itemize}
+
+\section{Riesgos y Mitigación}
+\begin{itemize}[left=0pt, itemsep=4pt]
+  \item \textbf{Cold start y latencia} en VPS limitado: optimizar cache, compresión, índices DB.
+  \item \textbf{Conflictos offline}: resolver con \textit{last-write-wins} y registros de auditoría.
+  \item \textbf{Seguridad}: fortalecer CSP, sanitización, rate limiting y monitoreo.
+  \item \textbf{Calidad de contenido}: guías para anfitriones, moderación y reportes.
+\end{itemize}
+
+\section{Entidades Principales (Modelo de Datos)}
+\begin{itemize}[left=0pt, itemsep=2pt]
+  \item \textbf{User} (id, email, hash, rol, perfil, 2FA opcional).
+  \item \textbf{HostProfile} (userId, estado verificación, documentos).
+  \item \textbf{Service} (id, hostId, tipo, categoría, descripción, precio, lat/long).
+  \item \textbf{ServiceImage} (serviceId, url, orden).
+  \item \textbf{Availability} (serviceId, fecha/rango, capacidad).
+  \item \textbf{Booking} (id, userId, serviceId, fechas, estado, importe).
+  \item \textbf{Message} (id, hilo, remitente, destinatario, texto, timestamp).
+  \item \textbf{Review} (id, fromUser, toService/Host, rating, comentario).
+  \item \textbf{Notification} (id, userId, tipo, canal, estado, suscripción push).
+\end{itemize}
+
+\section{Notas}
+\begin{itemize}[left=0pt, itemsep=4pt]
+  \item \textbf{Pagos}: se recomienda integrar en una fase posterior (online-only); el flujo offline limitará a \emph{solicitud de reserva}.
+  \item \textbf{Nombre del producto}: unificar bajo ``Arroyo Seco Resolve'' o el nombre final acordado por la comunidad.
+\end{itemize}
+
+\end{document}

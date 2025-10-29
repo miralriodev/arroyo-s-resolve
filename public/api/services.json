@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "title": "Cabaña Río",
+    "price": 1200,
+    "rating": 4.6,
+    "image": "/vite.svg",
+    "categoria": "alojamiento",
+    "ubicacion": "centro",
+    "descripcion": "Cabaña junto al río, ideal para familias."
+  },
+  {
+    "id": 2,
+    "title": "Tour Cascada",
+    "price": 800,
+    "rating": 4.8,
+    "image": "/vite.svg",
+    "categoria": "experiencia",
+    "ubicacion": "periferia",
+    "descripcion": "Recorrido guiado por cascadas y miradores."
+  },
+  {
+    "id": 3,
+    "title": "Hostal Centro",
+    "price": 500,
+    "rating": 4.2,
+    "image": "/vite.svg",
+    "categoria": "alojamiento",
+    "ubicacion": "centro",
+    "descripcion": "Habitaciones privadas y compartidas en el centro."
+  }
+]

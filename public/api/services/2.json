@@ -1,0 +1,10 @@
+{
+  "id": 2,
+  "title": "Tour Cascada",
+  "price": 800,
+  "rating": 4.8,
+  "image": "/vite.svg",
+  "categoria": "experiencia",
+  "ubicacion": "periferia",
+  "descripcion": "Recorrido guiado por cascadas y miradores con traslado."
+}

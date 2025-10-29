@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Actualiza el sitemap al dominio de producción cuando esté disponible
+# Sitemap: https://tu-dominio.com/sitemap.xml
