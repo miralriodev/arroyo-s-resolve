@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+  app:
+    # Usa la imagen publicada en GitHub Container Registry (GHCR)
+    # Cambia a tu usuario/repositorio si fuera distinto
+    image: ghcr.io/miralriodev/arroyo-s-resolve:latest
+
+    # Mapea el puerto 80 del VPS al 80 del contenedor (Nginx)
+    ports:
+      - "80:80"
+
+    # Mantener el contenedor corriendo en caso de reinicios
+    restart: always
