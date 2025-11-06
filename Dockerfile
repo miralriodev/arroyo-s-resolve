@@ -10,6 +10,13 @@ RUN npm ci --no-audit --no-fund
 
 # Copiar el resto del código y construir
 COPY . .
+
+# Variables de build para Supabase (se incrustan en el bundle de Vite)
+ARG SUPABASE_URL
+ARG SUPABASE_ANON_KEY
+ENV VITE_APP_SUPABASE_URL=$SUPABASE_URL \
+    VITE_APP_SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+
 RUN npm run build
 
 # Etapa de producción con Nginx

@@ -30,6 +30,9 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository }}:latest
             ghcr.io/${{ github.repository }}:${{ github.sha }}
+          build-args: |
+            SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+            SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
 
   deploy:
     needs: build-and-push
@@ -51,7 +54,6 @@ jobs:
           target: "/var/www/my-app"
 
       - name: Pull and run new image on VPS
-        # Este es el script exacto de tu PDF 
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -61,4 +63,4 @@ jobs:
             cd /var/www/my-app
             docker-compose pull
             docker-compose down
-            docker-compose up -d
+            docker-compose up --scale app=2 -d
