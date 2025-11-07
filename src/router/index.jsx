@@ -11,6 +11,7 @@ const Profile = lazy(() => import('../pages/Profile'))
 const Admin = lazy(() => import('../pages/Admin'))
 const Login = lazy(() => import('../pages/Login'))
 const Register = lazy(() => import('../pages/Register'))
+const Privacy = lazy(() => import('../pages/Privacy'))
 
 export const router = createBrowserRouter([
   {
@@ -73,6 +74,14 @@ export const router = createBrowserRouter([
             <RequireRole allowed={["admin"]}>
               <Admin />
             </RequireRole>
+          </Suspense>
+        ),
+      },
+      {
+        path: '/privacidad',
+        element: (
+          <Suspense fallback={<div>Cargando…</div>}>
+            <Privacy />
           </Suspense>
         ),
       },

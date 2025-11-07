@@ -1,0 +1,260 @@
+\documentclass[12pt]{article}
+\usepackage[spanish]{babel}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage[scaled]{helvet}
+  \renewcommand{\familydefault}{\sfdefault} % Arial equivalente (Helvetica) en pdfLaTeX
+\else
+  \usepackage{fontspec}
+  \setmainfont{Arial} % Usa Arial cuando se compile con XeLaTeX/LuaLaTeX
+\fi
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{geometry}
+\geometry{margin=1in}
+
+% Portada personalizada
+\begin{document}
+\begin{titlepage}
+  \centering
+  {\Large \textbf{UNIVERSIDAD TECNOLÓGICA DE QUERÉTARO}}\\[1.0cm]
+  {\large IDGS 11 GPDS}\\[1.0cm]
+  {\LARGE \textbf{Plan de Despliegue Blue/Green y CI/CD}}\\[0.5cm]
+  {\large Proyecto: Arroyo Seco Resolve (PWA)}\\[1.0cm]
+
+  \begin{flushleft}
+  \textbf{GRUPO:} IDSG 11\\[0.3cm]
+  \textbf{ALUMNOS:}\\
+  MIRALRIO ESPINOZA HUGO ALBERTO\\
+  SERRANO CRUZ HERNAN\\
+  JIMENEZ SALINAS MARIA DOLORES\\
+  TORRES JIMENEZ RICARDO\\[0.3cm]
+  \textbf{MAESTRO:} BRANDON EFREN VENEGAS OLVERA\\[0.8cm]
+  \textbf{Fecha:} 11/04/2025
+  \end{flushleft}
+
+  \vfill
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\section{Análisis del Estado Actual}
+\subsection{Pipeline de CI/CD vigente}
+Actualmente se utiliza \textbf{GitHub Actions} con dos jobs principales:
+\begin{itemize}[left=0pt, itemsep=4pt]
+  \item \textbf{build-and-push}: Construye la imagen Docker de la PWA (React/Vite) y la publica en GitHub Container Registry (GHCR) con tags \texttt{latest} y \texttt{\$\{github.sha\}}. Se pasan las variables de build para Supabase via \texttt{build-args}.
+  \item \textbf{deploy}: Copia \texttt{docker-compose.yml} al VPS y ejecuta \texttt{docker-compose pull}, \texttt{down} y \texttt{up --scale app=2 -d} por SSH para actualizar la instancia en producción.
+\end{itemize}
+
+\noindent Fragmento representativo del workflow:\\
+\begin{verbatim}
+name: CI/CD
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
+          build-args: |
+            SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+            SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "docker-compose.yml"
+          target: "/var/www/my-app"
+      - uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /var/www/my-app
+            docker-compose pull
+            docker-compose down
+            docker-compose up --scale app=2 -d
+\end{verbatim}
+
+\subsection{Componentes clave de la aplicación}
+\begin{itemize}[left=0pt, itemsep=4pt]
+  \item \textbf{Frontend PWA}: React/Vite, \texttt{vite-plugin-pwa} con precache/runtime caching y background sync. La imagen final corre con Nginx dentro del contenedor.
+  \item \textbf{Backend (planeado)}: Node.js/Express detrás de Nginx (no presente aún en el pipeline, contemplado en documentación del proyecto).
+  \item \textbf{Base de Datos}: PostgreSQL (planeado), con backups y métricas.
+  \item \textbf{Cache/Colas}: Redis (planeado) para cache y reintentos.
+  \item \textbf{Reverse Proxy}: Nginx en el VPS para servir la PWA y, en futuro, enrutar \texttt{/api} al backend.
+  \item \textbf{Contenedor}: \texttt{nginx:alpine} que sirve \texttt{/usr/share/nginx/html} con SPA fallback a \texttt{index.html}.
+\end{itemize}
+
+\section{Acciones de Implementación}
+\subsection{Configuración de Entornos: Blue y Green}
+Objetivo: mantener dos entornos de producción \textbf{idénticos} en el mismo VPS, donde \textbf{Blue} está activo y \textbf{Green} recibe despliegues nuevos para validación previa al switch.
+
+\paragraph{Estructura propuesta en el VPS}
+\begin{itemize}[left=0pt, itemsep=4pt]
+  \item Directorios: \texttt{/var/www/arroyo-seco-blue} y \texttt{/var/www/arroyo-seco-green}.
+  \item Dos \texttt{docker-compose} separados (o proyectos Compose distintos con \texttt{-p}): servicios \texttt{app\_blue} y \texttt{app\_green} exponiendo puertos \texttt{8081} y \texttt{8082} hacia host.
+  \item Nginx en el VPS actúa como reverse proxy: enruta el dominio hacia \texttt{blue} o \texttt{green} según una variable de entorno activa.
+\end{itemize}
+
+\paragraph{Ejemplo de \texttt{docker-compose} para Blue y Green}
+\begin{verbatim}
+# docker-compose.blue.yml
+services:
+  app_blue:
+    image: ghcr.io/miralriodev/arroyo-s-resolve:${VERSION_TAG}
+    ports:
+      - "8081:80"
+    restart: always
+
+# docker-compose.green.yml
+services:
+  app_green:
+    image: ghcr.io/miralriodev/arroyo-s-resolve:${VERSION_TAG}
+    ports:
+      - "8082:80"
+    restart: always
+\end{verbatim}
+
+\paragraph{Nginx: selección dinámica del upstream}
+\begin{verbatim}
+# /etc/nginx/conf.d/upstreams.conf
+upstream pwa_blue  { server 127.0.0.1:8081; }
+upstream pwa_green { server 127.0.0.1:8082; }
+
+# /etc/nginx/conf.d/active_env.conf (editable por CI)
+set $active_env blue;  # valores: 'blue' o 'green'
+
+# /etc/nginx/conf.d/site.conf
+map $active_env $pwa_upstream {
+  default pwa_blue;
+  blue    pwa_blue;
+  green   pwa_green;
+}
+
+server {
+  listen 80;
+  server_name ejemplo.com;
+  location / {
+    proxy_pass http://$pwa_upstream;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+  }
+}
+\end{verbatim}
+
+\subsection{Modificación del Pipeline}
+Se propone extender el workflow con los siguientes \textit{stages}:
+\begin{itemize}[left=0pt, itemsep=4pt]
+  \item \textbf{deploy\_to\_green}: Desplegar la nueva imagen en \texttt{arroyo-seco-green} (puerto 8082).
+  \item \textbf{run\_tests\_on\_green}: Health checks (\texttt{curl -f}), validación de assets, opcional Lighthouse/axe.
+  \item \textbf{switch\_traffic}: Editar \texttt{/etc/nginx/conf.d/active\_env.conf} a \texttt{green} y recargar Nginx.
+  \item \textbf{decommission\_blue}: Apagar \texttt{app\_blue} y mantener solo \texttt{app\_green} activo (o conservar como rollback temporal).
+\end{itemize}
+
+\noindent Esquema YAML (simplificado) de los nuevos pasos por SSH:
+\begin{verbatim}
+- name: Deploy to GREEN
+  uses: appleboy/ssh-action@master
+  with:
+    host: ${{ secrets.SSH_HOST }}
+    username: ${{ secrets.SSH_USER }}
+    key: ${{ secrets.SSH_PRIVATE_KEY }}
+    script: |
+      cd /var/www/arroyo-seco-green
+      export VERSION_TAG=${{ github.sha }}
+      docker-compose -p arroyo-green -f docker-compose.green.yml pull
+      docker-compose -p arroyo-green -f docker-compose.green.yml up -d
+
+- name: Run tests on GREEN
+  uses: appleboy/ssh-action@master
+  with:
+    host: ${{ secrets.SSH_HOST }}
+    username: ${{ secrets.SSH_USER }}
+    key: ${{ secrets.SSH_PRIVATE_KEY }}
+    script: |
+      curl -f http://127.0.0.1:8082 || exit 1
+      # Opcional: scripts de validación E2E o Lighthouse
+
+- name: Switch traffic to GREEN
+  uses: appleboy/ssh-action@master
+  with:
+    host: ${{ secrets.SSH_HOST }}
+    username: ${{ secrets.SSH_USER }}
+    key: ${{ secrets.SSH_PRIVATE_KEY }}
+    script: |
+      echo "set \$active_env green;" | sudo tee /etc/nginx/conf.d/active_env.conf
+      sudo nginx -s reload
+
+- name: Decommission BLUE (optional)
+  uses: appleboy/ssh-action@master
+  with:
+    host: ${{ secrets.SSH_HOST }}
+    username: ${{ secrets.SSH_USER }}
+    key: ${{ secrets.SSH_PRIVATE_KEY }}
+    script: |
+      cd /var/www/arroyo-seco-blue
+      docker-compose -p arroyo-blue -f docker-compose.blue.yml down
+\end{verbatim}
+
+\subsection{Automatización del Despliegue}
+\begin{itemize}[left=0pt, itemsep=4pt]
+  \item \textbf{Herramientas}: \texttt{docker-compose}, Nginx, GitHub Actions, \texttt{appleboy/ssh-action} y \texttt{appleboy/scp-action}.
+  \item \textbf{Estrategia}: desplegar siempre en \textbf{GREEN} (inactivo), validar y luego conmutar tráfico; \textbf{BLUE} queda como rollback.
+  \item \textbf{Variables}: \texttt{VERSION\_TAG=${\{} github.sha ${\}}} para identificar imágenes; secretos SSH en \texttt{secrets}.
+\end{itemize}
+
+\section{Consideraciones Estratégicas}
+\subsection{Gestión del Tráfico}
+\begin{itemize}[left=0pt, itemsep=4pt]
+  \item \textbf{Herramienta}: Nginx como reverse proxy en el VPS. Alternativas: balanceadores cloud (AWS ELB, GCP LB) o service mesh (Istio) si se migra a Kubernetes.
+  \item \textbf{Ejecución del switch}: edición atómica del archivo \texttt{active\_env.conf} y \texttt{nginx -s reload}. El cambio es inmediato y sin downtime perceptible.
+  \item \textbf{Rollback}: revertir a \texttt{blue} editando el mismo archivo y recargando Nginx.
+\end{itemize}
+
+\subsection{Manejo de Sesiones y Estado}
+\begin{itemize}[left=0pt, itemsep=4pt]
+  \item \textbf{PWA y autenticación}: La PWA usa Supabase/JS con tokens almacenados en \texttt{localStorage}. Como el dominio no cambia, el switch Blue\,$\to$\,Green \textbf{no invalida} el token del cliente.
+  \item \textbf{Backend futuro}: Recomendado \textbf{stateless JWT} en el backend (Node/Express) para evitar dependencia de sesiones en memoria. Si se requiere sesión de servidor, usar \textbf{Redis} compartido entre Blue y Green.
+  \item \textbf{Sticky sessions}: No necesarias para PWA estática; si se incorpora backend con sesiones, habilitar stickiness en el proxy o migrar a JWT.
+  \item \textbf{Operaciones en curso}: La PWA tiene \textit{background sync}. Durante el switch, la cola IndexedDB retiene solicitudes y las reenviará al recuperar conectividad; al mantener el mismo dominio, no hay rotura de origen.
+\end{itemize}
+
+\subsection{Notas adicionales}
+\begin{itemize}[left=0pt, itemsep=4pt]
+  \item \textbf{Observabilidad}: Añadir salud HTTP \texttt{/health} y métricas p95/p99 para validar GREEN antes del switch.
+  \item \textbf{Seguridad}: Mantener TLS/HTTP2 y cabeceras de seguridad en Nginx; rotación de tokens y rate limiting en backend.
+  \item \textbf{Base de datos}: Un único clúster PostgreSQL para ambos entornos; los despliegues no modifican esquema sin migración validada.
+\end{itemize}
+
+\section{Conclusión}
+El pipeline actual \textbf{no requiere ser sustituido}, sino \textbf{extendido} con Blue/Green: desplegar en GREEN, probar, conmutar tráfico en Nginx y conservar BLUE para rollback. Esta estrategia reduce riesgo y downtime, y se alinea con la arquitectura prevista (Nginx + Docker + PWA/Backend).
+
+\end{document}

@@ -1,8 +1,14 @@
-import styled from 'styled-components'
-import ServiceCard from '../components/molecules/ServiceCard'
 import { useEffect, useMemo, useState } from 'react'
-import SearchBar from '../components/molecules/SearchBar'
+import styled from 'styled-components'
 import Filters from '../components/molecules/Filters'
+import SearchBar from '../components/molecules/SearchBar'
+import ServiceCard from '../components/molecules/ServiceCard'
+import { listAccommodations } from '../supabase/accommodations'
+
+const Wrapper = styled.div`
+  display: grid;
+  gap: ${({ theme }) => theme.spacing(4)};
+`
 
 const Grid = styled.div`
   display: grid;
@@ -11,6 +17,10 @@ const Grid = styled.div`
   @media (max-width: ${({ theme }) => theme.breakpoints.sm}) {
     grid-template-columns: 1fr;
   }
+`
+
+const ErrorText = styled.p`
+  color: #d32f2f;
 `
 
 const fallbackServices = [
@@ -29,11 +39,27 @@ export default function Services() {
   useEffect(() => {
     let active = true
     setLoading(true)
-    fetch('/api/services.json')
-      .then((r) => r.json())
-      .then((json) => { if (active) { setServices(json); setError('') } })
-      .catch(() => { if (active) { setServices(fallbackServices); setError('Modo offline o error de red') } })
-      .finally(() => active && setLoading(false))
+    // Primero intenta cargar desde Supabase; si falla, usa el fallback local
+    ;(async () => {
+      try {
+        const rows = await listAccommodations()
+        const mapped = (rows || []).map(r => ({
+          id: r.id,
+          title: r.title,
+          price: r.price ?? 0,
+          rating: r.rating ?? 0,
+          image: r.image_url || '/vite.svg',
+          categoria: r.category || 'alojamiento',
+          ubicacion: r.location || 'centro',
+          descripcion: r.description || ''
+        }))
+        if (active) { setServices(mapped); setError('') }
+      } catch (_) {
+        if (active) { setServices(fallbackServices); setError('Modo offline o error de red', _.message) }
+      } finally {
+        active && setLoading(false)
+      }
+    })()
     return () => { active = false }
   }, [])
 
@@ -45,19 +71,19 @@ export default function Services() {
     if (filters.precio === 'asc') data = [...data].sort((a, b) => a.price - b.price)
     if (filters.precio === 'desc') data = [...data].sort((a, b) => b.price - a.price)
     return data
-  }, [query, filters])
+  }, [query, filters, services])
 
   return (
-    <div>
+    <Wrapper>
       <SearchBar onSearch={setQuery} />
       <Filters onChange={setFilters} />
       {loading && <p>Cargando servicios...</p>}
-      {error && <p style={{ color: '#d32f2f' }}>{error}</p>}
+      {error && <ErrorText>{error}</ErrorText>}
       <Grid>
         {filtered.map((s) => (
           <ServiceCard key={s.id} image={s.image} title={s.title} price={s.price} rating={s.rating} to={`/servicios/${s.id}`} />
         ))}
       </Grid>
-    </div>
+    </Wrapper>
   )
 }
