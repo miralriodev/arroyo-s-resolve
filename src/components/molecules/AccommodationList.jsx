@@ -16,6 +16,9 @@ const Item = styled.li`
   background: #fff;
   display: grid;
   gap: ${({ theme }) => theme.spacing(2)};
+  box-shadow: ${({ theme }) => theme.shadow.sm};
+  transition: transform 120ms ease;
+  &:hover { transform: translateY(-1px); }
 `
 
 const Row = styled.div`

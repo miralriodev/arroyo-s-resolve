@@ -3,6 +3,14 @@ import Button from '../atoms/Button'
 import Input from '../atoms/Input'
 import Textarea from '../atoms/Textarea'
 
+const Card = styled.div`
+  background: #fff;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.radius.md};
+  box-shadow: ${({ theme }) => theme.shadow.md};
+  padding: ${({ theme }) => theme.spacing(5)};
+`
+
 const Form = styled.form`
   display: grid;
   gap: ${({ theme }) => theme.spacing(3)};
@@ -18,7 +26,8 @@ const Row = styled.div`
 
 export default function AccommodationForm({ form, onChange, onSubmit, editing, onCancel }) {
   return (
-    <Form onSubmit={onSubmit}>
+    <Card>
+      <Form onSubmit={onSubmit}>
       <Input placeholder="Título" value={form.title} onChange={e => onChange({ ...form, title: e.target.value })} required />
       <Textarea placeholder="Descripción" value={form.description} onChange={e => onChange({ ...form, description: e.target.value })} />
       <Row>
@@ -34,6 +43,7 @@ export default function AccommodationForm({ form, onChange, onSubmit, editing, o
         <Button type="submit">{editing ? 'Actualizar' : 'Crear'} alojamiento</Button>
         {editing && <Button type="button" onClick={onCancel}>Cancelar edición</Button>}
       </Row>
-    </Form>
+      </Form>
+    </Card>
   )
 }

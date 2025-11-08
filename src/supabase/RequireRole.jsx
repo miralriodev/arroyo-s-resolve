@@ -1,19 +1,39 @@
+import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from './AuthContext'
+import { supabase } from './supabase.config.jsx'
 
 export default function RequireRole({ allowed = ['admin'], children }) {
-  const { user, session, loading } = useAuth()
+  const { user, loading } = useAuth()
+  const [role, setRole] = useState(null)
+  const [checking, setChecking] = useState(true)
 
-  if (loading) return <div>Cargando…</div>
+  useEffect(() => {
+    const fetchRole = async () => {
+      if (!user?.id) {
+        setRole(null)
+        setChecking(false)
+        return
+      }
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+      if (error) {
+        // Si falla, tratamos como no autorizado
+        setRole(null)
+      } else {
+        setRole(data?.role ?? null)
+      }
+      setChecking(false)
+    }
+    fetchRole()
+  }, [user?.id])
+
+  if (loading || checking) return <div>Cargando…</div>
   if (!user) return <Navigate to="/login" replace />
-
-  const meta = session?.user?.app_metadata || {}
-  const userMeta = session?.user?.user_metadata || {}
-
-  let roles = meta.roles || meta.role || userMeta.roles || userMeta.role || []
-  if (typeof roles === 'string') roles = [roles]
-
-  const isAllowed = roles?.some?.(r => allowed.includes(r))
+  const isAllowed = role ? allowed.includes(role) : false
   if (!isAllowed) return <Navigate to="/" replace />
 
   return children

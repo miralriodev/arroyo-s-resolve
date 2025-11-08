@@ -5,7 +5,7 @@ export const GlobalStyle = createGlobalStyle`
   html, body, #root { height: 100%; }
   body {
     margin: 0;
-    font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
     color: ${({ theme }) => theme.colors.text};
     background: ${({ theme }) => theme.colors.background};
     -webkit-font-smoothing: antialiased;

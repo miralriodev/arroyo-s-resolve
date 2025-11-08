@@ -1,4 +1,6 @@
 import styled from 'styled-components'
+import Input from '../atoms/Input'
+import Button from '../atoms/Button'
 
 const Wrapper = styled.form`
   display: grid;
@@ -7,23 +9,6 @@ const Wrapper = styled.form`
   margin: ${({ theme }) => theme.spacing(4)} 0;
   @media (max-width: ${({ theme }) => theme.breakpoints.sm}) {
     grid-template-columns: 1fr;
-  }
-`
-
-const Input = styled.input`
-  padding: ${({ theme }) => theme.spacing(3)};
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: ${({ theme }) => theme.radius.sm};
-`
-
-const Button = styled.button`
-  padding: ${({ theme }) => theme.spacing(3)} ${({ theme }) => theme.spacing(5)};
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: ${({ theme }) => theme.radius.sm};
-  background: ${({ theme }) => theme.colors.primary};
-  color: white;
-  @media (max-width: ${({ theme }) => theme.breakpoints.sm}) {
-    width: 100%;
   }
 `
 
