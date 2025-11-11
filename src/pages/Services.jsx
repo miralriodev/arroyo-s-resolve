@@ -25,9 +25,7 @@ const ErrorText = styled.p`
 
 const fallbackServices = [
   { id: 1, title: 'Cabaña Río', price: 1200, rating: 4.6, image: '/vite.svg', categoria: 'alojamiento', ubicacion: 'centro' },
-  { id: 2, title: 'Tour Cascada', price: 800, rating: 4.8, image: '/vite.svg', categoria: 'experiencia', ubicacion: 'periferia' },
-  { id: 3, title: 'Hostal Centro', price: 500, rating: 4.2, image: '/vite.svg', categoria: 'alojamiento', ubicacion: 'centro' },
-]
+  ]
 
 export default function Services() {
   const [query, setQuery] = useState('')
@@ -55,7 +53,12 @@ export default function Services() {
         }))
         if (active) { setServices(mapped); setError('') }
       } catch (_) {
-        if (active) { setServices(fallbackServices); setError('Modo offline o error de red', _.message) }
+        if (active) {
+          setServices(fallbackServices)
+          const msg = _.message ? `Modo offline o error de red: ${_.message}` : 'Modo offline o error de red'
+          setError(msg)
+          console.error('listAccommodations failed:', _)
+        }
       } finally {
         active && setLoading(false)
       }
@@ -64,7 +67,8 @@ export default function Services() {
   }, [])
 
   const filtered = useMemo(() => {
-    let data = services.length ? services : fallbackServices
+    // Usar datos de Supabase; si hubo error, en el catch ya pusimos fallback en services
+    let data = services
     if (query) data = data.filter((s) => s.title.toLowerCase().includes(query.toLowerCase()))
     if (filters.categoria) data = data.filter((s) => s.categoria === filters.categoria)
     if (filters.ubicacion) data = data.filter((s) => s.ubicacion === filters.ubicacion)
@@ -79,9 +83,19 @@ export default function Services() {
       <Filters onChange={setFilters} />
       {loading && <p>Cargando servicios...</p>}
       {error && <ErrorText>{error}</ErrorText>}
+      {!error && services.length === 0 && !loading && (
+        <p>No hay servicios disponibles.</p>
+      )}
       <Grid>
         {filtered.map((s) => (
-          <ServiceCard key={s.id} image={s.image} title={s.title} price={s.price} rating={s.rating} to={`/servicios/${s.id}`} />
+          <ServiceCard
+            key={s.id}
+            image={s.image || '/vite.svg'}
+            title={s.title}
+            price={s.price}
+            rating={s.rating}
+            to={`/servicios/${s.id}`}
+          />
         ))}
       </Grid>
     </Wrapper>

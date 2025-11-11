@@ -1,6 +1,7 @@
-import styled from 'styled-components'
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import styled from 'styled-components'
+import { getAccommodation } from '../supabase/accommodations'
 
 const Wrapper = styled.div`
   display: grid;
@@ -15,12 +16,24 @@ export default function ServiceDetail() {
 
   useEffect(() => {
     let active = true
-    setLoading(true)
-    fetch(`/api/services/${id}.json`)
-      .then((r) => r.json())
-      .then((json) => { if (active) { setData(json); setError('') } })
-      .catch(() => { if (active) { setError('Modo offline o servicio no cacheado'); setData(null) } })
-      .finally(() => active && setLoading(false))
+    const load = async () => {
+      setLoading(true)
+      try {
+        const row = await getAccommodation(id)
+        if (active) {
+          setData(row)
+          setError('')
+        }
+      } catch (e) {
+        if (active) {
+          setError(`No se pudo cargar el servicio (offline o no existe). ${e?.message || ''}`)
+          setData(null)
+        }
+      } finally {
+        active && setLoading(false)
+      }
+    }
+    load()
     return () => { active = false }
   }, [id])
 
@@ -31,11 +44,11 @@ export default function ServiceDetail() {
   return (
     <Wrapper>
       <h2>{data.title}</h2>
-      <img src={data.image} alt={data.title} style={{ width: '100%', maxHeight: 320, objectFit: 'cover' }} />
+      <img src={data.image_url || '/vite.svg'} alt={data.title} style={{ width: '100%', maxHeight: 320, objectFit: 'cover' }} />
       <p><strong>Precio:</strong> ${data.price}</p>
       <p><strong>Rating:</strong> ★ {data.rating}</p>
-      <p><strong>Ubicación:</strong> {data.ubicacion}</p>
-      <p>{data.descripcion}</p>
+      <p><strong>Ubicación:</strong> {data.location}</p>
+      <p>{data.description}</p>
     </Wrapper>
   )
 }
