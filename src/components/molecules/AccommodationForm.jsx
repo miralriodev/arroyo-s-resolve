@@ -2,6 +2,7 @@ import styled from 'styled-components'
 import Button from '../atoms/Button'
 import Input from '../atoms/Input'
 import Textarea from '../atoms/Textarea'
+import Label from '../atoms/Label'
 
 const Card = styled.div`
   background: #fff;
@@ -38,7 +39,11 @@ export default function AccommodationForm({ form, onChange, onSubmit, editing, o
         <Input placeholder="Categoría" value={form.category} onChange={e => onChange({ ...form, category: e.target.value })} />
         <Input placeholder="Ubicación" value={form.location} onChange={e => onChange({ ...form, location: e.target.value })} />
       </Row>
-      <Input placeholder="URL de imagen" value={form.image_url} onChange={e => onChange({ ...form, image_url: e.target.value })} />
+      <Input placeholder="URL de imagen (opcional si subes archivo)" value={form.image_url} onChange={e => onChange({ ...form, image_url: e.target.value })} />
+      <div>
+        <Label htmlFor="image_file">Imagen (archivo)</Label>
+        <input id="image_file" type="file" accept="image/*" onChange={e => onChange({ ...form, image_file: e.target.files?.[0] || null })} />
+      </div>
       <Row>
         <Button type="submit">{editing ? 'Actualizar' : 'Crear'} alojamiento</Button>
         {editing && <Button type="button" onClick={onCancel}>Cancelar edición</Button>}

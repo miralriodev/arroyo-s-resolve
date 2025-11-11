@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import styled from 'styled-components'
-import { createAccommodation, deleteAccommodation, listAccommodations, updateAccommodation } from '../supabase/accommodations'
 import AccommodationForm from '../components/molecules/AccommodationForm'
 import AccommodationList from '../components/molecules/AccommodationList'
+import { createAccommodation, deleteAccommodation, listAccommodations, updateAccommodation } from '../supabase/accommodations'
+import { uploadServiceImage } from '../supabase/storage'
+import { useAuth } from '../supabase/AuthContext.jsx'
 
 const Wrapper = styled.div`
   display: grid;
@@ -14,11 +16,12 @@ const ErrorText = styled.p`
 `
 
 export default function Admin() {
+  const { user } = useAuth()
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [editing, setEditing] = useState(null)
-  const [form, setForm] = useState({ title: '', description: '', price: 0, rating: 0, category: 'alojamiento', location: '', image_url: '' })
+  const [form, setForm] = useState({ title: '', description: '', price: 0, rating: 0, category: 'alojamiento', location: '', image_url: '', image_file: null })
 
   const load = async () => {
     setLoading(true)
@@ -38,12 +41,25 @@ export default function Admin() {
   const onSubmit = async (e) => {
     e.preventDefault()
     try {
-      if (editing) {
-        await updateAccommodation(editing.id, form)
-      } else {
-        await createAccommodation(form)
+      let payload = { ...form }
+      // Si hay archivo, subir a Storage y usar la URL pública
+      if (form.image_file) {
+        const { publicUrl } = await uploadServiceImage(form.image_file, editing?.id || user?.id)
+        payload.image_url = publicUrl
       }
-      setForm({ title: '', description: '', price: 0, rating: 0, category: 'alojamiento', location: '', image_url: '' })
+      // No enviar el File al DB
+      delete payload.image_file
+      // Establecer host_id para cumplir políticas RLS por dueño/admin
+      payload.host_id = editing?.host_id || user?.id || null
+
+      if (editing) {
+        await updateAccommodation(editing.id, payload)
+      } else {
+        const created = await createAccommodation(payload)
+        
+        // Si se crea sin id previo y había archivo, podríamos subir con id real; por simplicidad ya se subió con 'new/'.
+      }
+      setForm({ title: '', description: '', price: 0, rating: 0, category: 'alojamiento', location: '', image_url: '', image_file: null })
       setEditing(null)
       await load()
     } catch (e) {
@@ -60,7 +76,8 @@ export default function Admin() {
       rating: item.rating ?? 0,
       category: item.category || 'alojamiento',
       location: item.location || '',
-      image_url: item.image_url || ''
+      image_url: item.image_url || '',
+      image_file: null
     })
   }
 
@@ -87,7 +104,7 @@ export default function Admin() {
         onChange={setForm}
         onSubmit={onSubmit}
         editing={!!editing}
-        onCancel={() => { setEditing(null); setForm({ title: '', description: '', price: 0, rating: 0, category: 'alojamiento', location: '', image_url: '' }) }}
+        onCancel={() => { setEditing(null); setForm({ title: '', description: '', price: 0, rating: 0, category: 'alojamiento', location: '', image_url: '', image_file: null }) }}
       />
 
       <div>
