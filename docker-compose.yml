@@ -4,3 +4,6 @@ services:
   app:
     image: ghcr.io/miralriodev/arroyo-s-resolve:latest
     restart: always
+  api:
+    image: ghcr.io/miralriodev/arroyo-seco-api:latest
+    restart: always
