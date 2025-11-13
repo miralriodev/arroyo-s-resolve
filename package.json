@@ -16,6 +16,7 @@
     "@capacitor/core": "^7.4.4",
     "@supabase-js/source": "github:supabase/supabase-js",
     "@supabase/supabase-js": "^2.77.0",
+    "axios": "^1.13.2",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.5",

@@ -1,0 +1,176 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums según el esquema
+enum Role {
+  visitor
+  host
+  admin
+}
+
+enum BookingStatus {
+  pending
+  confirmed
+  cancelled
+}
+
+// Tabla de usuarios de Supabase (auth.users)
+model User {
+  id     String  @id @db.Uuid
+  email  String? @db.Text
+
+  // Relaciones
+  profile Profile?
+  messagesFrom Message[] @relation("MessagesFrom")
+  messagesTo   Message[] @relation("MessagesTo")
+
+  @@map("users")
+  @@schema("auth")
+}
+
+// Perfiles (public.profiles)
+model Profile {
+  id         String   @id @db.Uuid
+  user       User     @relation(fields: [id], references: [id], onDelete: Cascade)
+  full_name  String?  @db.Text
+  avatar_url String?  @db.Text
+  role       Role     @default(visitor)
+  created_at DateTime @default(now()) @db.Timestamptz
+
+  // Relaciones
+  accommodations Accommodation[]
+  bookings       Booking[]
+  messagesFrom   Message[] @relation("MessagesFrom")
+  messagesTo     Message[] @relation("MessagesTo")
+  reviews        Review[]
+
+  @@index([role])
+  @@map("profiles")
+  @@schema("public")
+}
+
+// Alojamientos (public.accommodations)
+model Accommodation {
+  id           BigInt    @id @default(autoincrement()) @db.BigInt
+  hostId       String?   @db.Uuid
+  host         Profile?  @relation(fields: [hostId], references: [id], onDelete: SetNull)
+  title        String    @db.Text
+  description  String?   @db.Text
+  price        Decimal   @default(0) @db.Decimal(12, 2)
+  rating       Decimal?  @default(0) @db.Decimal(3, 2)
+  category     String?   @db.Text
+  location     String?   @db.Text
+  image_url    String?   @db.Text
+  created_at   DateTime  @default(now()) @db.Timestamptz
+  updated_at   DateTime  @default(now()) @db.Timestamptz
+
+  // Relaciones
+  images       AccommodationImage[]
+  availability Availability[]
+  bookings     Booking[]
+  messages     Message[]
+  reviews      Review[]
+
+  @@index([category])
+  @@index([location])
+  @@map("accommodations")
+  @@schema("public")
+}
+
+// Imágenes de alojamiento (public.accommodation_images)
+model AccommodationImage {
+  id               BigInt        @id @default(autoincrement()) @db.BigInt
+  accommodationId  BigInt        @db.BigInt
+  accommodation    Accommodation @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+  url              String        @db.Text
+  sort_order       Int           @default(0)
+
+  @@index([accommodationId])
+  @@map("accommodation_images")
+  @@schema("public")
+}
+
+// Disponibilidad (public.availability)
+model Availability {
+  id               BigInt        @id @default(autoincrement()) @db.BigInt
+  accommodationId  BigInt        @db.BigInt
+  accommodation    Accommodation @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+  date             DateTime      @db.Date
+  capacity         Int           @default(1)
+  reserved         Int           @default(0)
+
+  @@unique([accommodationId, date])
+  @@index([accommodationId, date])
+  @@map("availability")
+  @@schema("public")
+}
+
+// Reservas (public.bookings)
+model Booking {
+  id               BigInt        @id @default(autoincrement()) @db.BigInt
+  userId           String?       @db.Uuid
+  user             Profile?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  accommodationId  BigInt        @db.BigInt
+  accommodation    Accommodation @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+  start_date       DateTime      @db.Date
+  end_date         DateTime      @db.Date
+  status           BookingStatus @default(pending)
+  amount           Decimal       @default(0) @db.Decimal(12, 2)
+  created_at       DateTime      @default(now()) @db.Timestamptz
+
+  @@index([userId])
+  @@index([accommodationId])
+  @@map("bookings")
+  @@schema("public")
+}
+
+// Mensajes (public.messages)
+model Message {
+  id               BigInt        @id @default(autoincrement()) @db.BigInt
+  thread_id        BigInt?       @db.BigInt
+  from_user        String?       @db.Uuid
+  from             Profile?      @relation("MessagesFrom", fields: [from_user], references: [id], onDelete: SetNull)
+  to_user          String?       @db.Uuid
+  to               Profile?      @relation("MessagesTo", fields: [to_user], references: [id], onDelete: SetNull)
+  accommodationId  BigInt?       @db.BigInt
+  accommodation    Accommodation? @relation(fields: [accommodationId], references: [id], onDelete: SetNull)
+  text             String        @db.Text
+  created_at       DateTime      @default(now()) @db.Timestamptz
+
+  @@index([thread_id])
+  @@map("messages")
+  @@schema("public")
+}
+
+// Reseñas (public.reviews)
+model Review {
+  id               BigInt        @id @default(autoincrement()) @db.BigInt
+  userId           String        @db.Uuid
+  user             Profile       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accommodationId  BigInt        @db.BigInt
+  accommodation    Accommodation @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+  rating           Int
+  comment          String?       @db.Text
+  created_at       DateTime      @default(now()) @db.Timestamptz
+
+  @@unique([userId, accommodationId])
+  @@index([accommodationId])
+  @@map("reviews")
+  @@schema("public")
+}
+
+// Categorías (public.categories)
+model Category {
+  id    BigInt @id @default(autoincrement()) @db.BigInt
+  key   String @unique @db.Text
+  label String @db.Text
+
+  @@map("categories")
+  @@schema("public")
+}
