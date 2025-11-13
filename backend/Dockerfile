@@ -1,5 +1,7 @@
 FROM node:20-alpine
 
+RUN apk add openssl1.1-compat
+
 WORKDIR /app
 
 # 1. Copia el package.json
