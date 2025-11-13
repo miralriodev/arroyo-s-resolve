@@ -14,12 +14,16 @@ enum Role {
   visitor
   host
   admin
+
+  @@schema("public")
 }
 
 enum BookingStatus {
   pending
   confirmed
   cancelled
+
+  @@schema("public")
 }
 
 // Tabla de usuarios de Supabase (auth.users)
