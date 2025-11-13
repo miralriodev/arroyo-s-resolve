@@ -1,6 +1,4 @@
-FROM node:20-alpine
-
-RUN apk add openssl1.1-compat
+FROM node:20
 
 WORKDIR /app
 
