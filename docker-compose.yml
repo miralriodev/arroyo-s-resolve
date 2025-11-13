@@ -1,9 +1,17 @@
 version: "3.8"
 
 services:
-  app:
-    image: ghcr.io/miralriodev/arroyo-s-resolve:latest
-    restart: always
-  api:
+  api_1:
     image: ghcr.io/miralriodev/arroyo-seco-api:latest
     restart: always
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=production
+  api_2:
+    image: ghcr.io/miralriodev/arroyo-seco-api:latest
+    restart: always
+    ports:
+      - "3002:3000"
+    environment:
+      - NODE_ENV=production

@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
+import { useProfileSync } from '../hooks/useProfileSync'
 import { supabase } from './supabase.config.jsx'
 
 const AuthContext = createContext({ user: null, session: null, loading: true })
@@ -27,15 +28,21 @@ export const AuthContextProvider = ({ children }) => {
     return () => subscription?.unsubscribe()
   }, [])
 
+  const { syncProfile } = useProfileSync()
+
   const signIn = async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw error
+    // Post-login: ensure profile is synced in backend
+    await syncProfile()
     return data
   }
 
   const signUp = async (email, password) => {
     const { data, error } = await supabase.auth.signUp({ email, password })
     if (error) throw error
+    // If session is returned (depending on email confirmation settings), sync profile
+    await syncProfile({ full_name: data?.user?.user_metadata?.full_name })
     return data
   }
 
