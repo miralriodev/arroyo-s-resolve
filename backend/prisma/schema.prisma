@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
 }
 
 datasource db {
@@ -27,8 +28,6 @@ model User {
 
   // Relaciones
   profile Profile?
-  messagesFrom Message[] @relation("MessagesFrom")
-  messagesTo   Message[] @relation("MessagesTo")
 
   @@map("users")
   @@schema("auth")
