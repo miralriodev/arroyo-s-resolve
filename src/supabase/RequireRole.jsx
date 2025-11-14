@@ -22,6 +22,7 @@ export default function RequireRole({ allowed = ['admin'], children }) {
         .single()
       if (error) {
         // Si falla, tratamos como no autorizado
+        console.error('RequireRole: error leyendo perfil/rol', error)
         setRole(null)
       } else {
         setRole(data?.role ?? null)
@@ -33,7 +34,9 @@ export default function RequireRole({ allowed = ['admin'], children }) {
 
   if (loading || checking) return <div>Cargando…</div>
   if (!user) return <Navigate to="/login" replace />
-  const isAllowed = role ? allowed.includes(role) : false
+  const normalizedAllowed = (allowed || []).map((a) => String(a).toLowerCase())
+  const normalizedRole = role ? String(role).toLowerCase() : ''
+  const isAllowed = normalizedRole ? normalizedAllowed.includes(normalizedRole) : false
   if (!isAllowed) return <Navigate to="/" replace />
 
   return children
