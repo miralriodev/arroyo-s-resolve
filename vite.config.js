@@ -53,4 +53,13 @@ export default defineConfig({
       manifest: false,
     }),
   ],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://api.cali-yoo.online',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
 })
