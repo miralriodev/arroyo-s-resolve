@@ -1,12 +1,14 @@
-import { createBrowserRouter } from 'react-router-dom'
 import { Suspense, lazy } from 'react'
-import AppShell from '../templates/AppShell'
+import { createBrowserRouter } from 'react-router-dom'
 import RequireAuth from '../supabase/RequireAuth.jsx'
 import RequireRole from '../supabase/RequireRole.jsx'
+import AppShell from '../templates/AppShell'
 
 const Services = lazy(() => import('../pages/Services'))
 const ServiceDetail = lazy(() => import('../pages/ServiceDetail'))
-const Reservations = lazy(() => import('../pages/Reservations'))
+const Accommodations = lazy(() => import('../pages/Accommodations'))
+const AccommodationDetail = lazy(() => import('../pages/AccommodationDetail'))
+const HostDashboard = lazy(() => import('../pages/HostDashboard'))
 const Profile = lazy(() => import('../pages/Profile'))
 const Admin = lazy(() => import('../pages/Admin'))
 const Login = lazy(() => import('../pages/Login'))
@@ -21,7 +23,31 @@ export const router = createBrowserRouter([
         path: '/',
         element: (
           <Suspense fallback={<div>Cargando…</div>}>
+            <Accommodations />
+          </Suspense>
+        ),
+      },
+      {
+        path: '/servicios',
+        element: (
+          <Suspense fallback={<div>Cargando…</div>}>
             <Services />
+          </Suspense>
+        ),
+      },
+      {
+        path: '/alojamientos',
+        element: (
+          <Suspense fallback={<div>Cargando…</div>}>
+            <Accommodations />
+          </Suspense>
+        ),
+      },
+      {
+        path: '/alojamientos/:id',
+        element: (
+          <Suspense fallback={<div>Cargando…</div>}>
+            <AccommodationDetail />
           </Suspense>
         ),
       },
@@ -50,14 +76,6 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: '/reservas',
-        element: (
-          <Suspense fallback={<div>Cargando…</div>}>
-            <Reservations />
-          </Suspense>
-        ),
-      },
-      {
         path: '/perfil',
         element: (
           <Suspense fallback={<div>Cargando…</div>}>
@@ -73,6 +91,16 @@ export const router = createBrowserRouter([
           <Suspense fallback={<div>Cargando…</div>}>
             <RequireRole allowed={["admin"]}>
               <Admin />
+            </RequireRole>
+          </Suspense>
+        ),
+      },
+      {
+        path: '/host',
+        element: (
+          <Suspense fallback={<div>Cargando…</div>}>
+            <RequireRole allowed={["host", "admin"]}>
+              <HostDashboard />
             </RequireRole>
           </Suspense>
         ),
