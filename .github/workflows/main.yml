@@ -60,6 +60,17 @@ jobs:
         with:
           context: ./backend # Usa el Dockerfile de la carpeta backend
           push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
+          build-args: |
+            SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+            SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+      - name: Build and push Backend API
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend # Usa el Dockerfile de la carpeta backend
+          push: true
           tags: ghcr.io/${{ github.repository_owner }}/arroyo-seco-api:latest
 
   # --- TRABAJO 4: DESPLEGAR A VPS (PRÁCTICA) ---
