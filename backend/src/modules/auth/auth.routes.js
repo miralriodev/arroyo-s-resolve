@@ -6,4 +6,7 @@ const controller = require('./auth.controller')
 // Sincroniza el perfil del usuario autenticado
 router.post('/sync-profile', requireAuth, controller.syncProfile)
 
+// Eliminar cuenta del usuario autenticado
+router.delete('/delete-account', requireAuth, controller.deleteAccount)
+
 module.exports = router

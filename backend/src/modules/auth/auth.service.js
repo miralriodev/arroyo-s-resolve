@@ -1,5 +1,6 @@
 const { supabase, supabaseAdmin } = require('../../config/supabase');
 const repo = require('./auth.repository');
+const prisma = require('../../config/prismaClient');
 
 async function register(userData) {
   const { email, password, name, full_name, avatar_url } = userData || {};
@@ -57,3 +58,25 @@ async function syncProfile(userId, payload = {}) {
 }
 
 module.exports.syncProfile = syncProfile;
+
+// Eliminación de cuenta: borra el usuario en Supabase y limpia datos derivados
+async function deleteAccount(userId) {
+  if (!userId) throw new Error('No autenticado');
+
+  // 1) Eliminar el usuario en Supabase (requiere SERVICE_ROLE)
+  const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
+  if (error) throw new Error(error.message || 'No se pudo eliminar el usuario en Supabase');
+
+  // 2) Limpieza defensiva: intentar borrar el perfil si aún existe
+  try {
+    await prisma.profile.delete({ where: { id: userId } });
+  } catch (_) {
+    // Silenciar si ya fue eliminado por cascada
+    console.log('No se pudo eliminar el perfil del usuario', _);
+  }
+
+  // 3) Opcional: otras limpiezas (reviews, mensajes) se manejan por reglas de FK
+  return true;
+}
+
+module.exports.deleteAccount = deleteAccount;
