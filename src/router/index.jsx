@@ -14,6 +14,7 @@ const Admin = lazy(() => import('../pages/Admin'))
 const Login = lazy(() => import('../pages/Login'))
 const Register = lazy(() => import('../pages/Register'))
 const Privacy = lazy(() => import('../pages/Privacy'))
+const DeleteAccount = lazy(() => import('../pages/DeleteAccount'))
 
 export const router = createBrowserRouter([
   {
@@ -110,6 +111,16 @@ export const router = createBrowserRouter([
         element: (
           <Suspense fallback={<div>Cargando…</div>}>
             <Privacy />
+          </Suspense>
+        ),
+      },
+      {
+        path: '/privacidad/eliminar-cuenta',
+        element: (
+          <Suspense fallback={<div>Cargando…</div>}>
+            <RequireAuth>
+              <DeleteAccount />
+            </RequireAuth>
           </Suspense>
         ),
       },
