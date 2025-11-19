@@ -12,6 +12,11 @@ app.use(cors())
 app.use(express.json())
 app.use(morgan('dev'))
 
+// Serializador JSON: convierte BigInt a string para evitar errores
+app.set('json replacer', (key, value) => {
+  return typeof value === 'bigint' ? value.toString() : value
+})
+
 // Salud básica
 app.get('/health', (req, res) => res.json({ status: 'ok' }))
 

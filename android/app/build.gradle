@@ -2,13 +2,13 @@ apply plugin: 'com.android.application'
 
 android {
     namespace "con.caliyoo.resolve"
-    compileSdk 35
+    compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
         applicationId "con.caliyoo.resolve"
-        minSdkVersion 24
-        targetSdkVersion 35
-        versionCode 7
-        versionName "1.0.6"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 8
+        versionName "1.0.7"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -18,20 +18,8 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
-    }
-    bundle {
-        language {
-            enableSplit = true
-        }
-        density {
-            enableSplit = true
-        }
-        abi {
-            enableSplit = true
         }
     }
 }
