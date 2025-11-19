@@ -118,9 +118,7 @@ export const router = createBrowserRouter([
         path: '/privacidad/eliminar-cuenta',
         element: (
           <Suspense fallback={<div>Cargando…</div>}>
-            <RequireAuth>
-              <DeleteAccount />
-            </RequireAuth>
+            <DeleteAccount />
           </Suspense>
         ),
       },
