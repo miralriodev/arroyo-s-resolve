@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useAuth } from '../supabase/AuthContext.jsx'
+import { useNavigate } from 'react-router-dom'
 import { deleteAccount } from '../api/auth'
 
 export default function DeleteAccount() {
   const { session, signOut } = useAuth()
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
@@ -33,7 +35,20 @@ export default function DeleteAccount() {
     )
   }
 
-  return (
+  const renderLoggedOut = () => (
+    <div style={{ maxWidth: 640, margin: '24px auto' }}>
+      <h2>Eliminar mi cuenta</h2>
+      <p>Para eliminar tu cuenta necesitas iniciar sesión.</p>
+      <button
+        onClick={() => navigate('/login?redirect=/privacidad/eliminar-cuenta')}
+        style={{ padding: '8px 16px' }}
+      >
+        Iniciar sesión
+      </button>
+    </div>
+  )
+
+  const renderLoggedIn = () => (
     <div style={{ maxWidth: 640, margin: '24px auto' }}>
       <h2>Eliminar mi cuenta</h2>
       <p>
@@ -46,4 +61,6 @@ export default function DeleteAccount() {
       </button>
     </div>
   )
+
+  return session ? renderLoggedIn() : renderLoggedOut()
 }

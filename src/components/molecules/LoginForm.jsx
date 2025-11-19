@@ -1,7 +1,7 @@
 import styled from 'styled-components'
 import { useState } from 'react'
 import { useAuth } from '../../supabase/AuthContext.jsx'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useLocation } from 'react-router-dom'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../atoms/Card'
 import Label from '../atoms/Label'
 import Input from '../atoms/Input'
@@ -23,6 +23,8 @@ const Field = styled.div`
 export default function LoginForm() {
   const { signIn } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  const redirect = new URLSearchParams(location.search).get('redirect') || '/'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState(null)
@@ -34,7 +36,7 @@ export default function LoginForm() {
     setLoading(true)
     try {
       await signIn(email, password)
-      navigate('/')
+      navigate(redirect)
     } catch (err) {
       setError(err?.message ?? 'Error al iniciar sesión')
     } finally {

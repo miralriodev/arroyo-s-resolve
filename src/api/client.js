@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const DEFAULT_BASE_URL = '/api/v1'
+const DEFAULT_BASE_URL = 'https://api.cali-yoo.online/api/v1'
 
 export function createApiClient(token) {
   const baseURL = import.meta.env.VITE_API_BASE_URL || DEFAULT_BASE_URL
