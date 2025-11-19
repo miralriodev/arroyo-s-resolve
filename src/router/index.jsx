@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react'
-import { createBrowserRouter } from 'react-router-dom'
+import { createHashRouter } from 'react-router-dom'
 import RequireAuth from '../supabase/RequireAuth.jsx'
 import RequireRole from '../supabase/RequireRole.jsx'
 import AppShell from '../templates/AppShell'
@@ -16,7 +16,7 @@ const Register = lazy(() => import('../pages/Register'))
 const Privacy = lazy(() => import('../pages/Privacy'))
 const DeleteAccount = lazy(() => import('../pages/DeleteAccount'))
 
-export const router = createBrowserRouter([
+export const router = createHashRouter([
   {
     element: <AppShell />,
     children: [
