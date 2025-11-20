@@ -55,6 +55,7 @@ create table if not exists public.bookings (
   accommodation_id bigint not null references public.accommodations(id) on delete cascade,
   start_date date not null,
   end_date date not null,
+  guests int not null default 1,
   status text check (status in ('pending','confirmed','cancelled')) default 'pending',
   amount numeric(12,2) not null default 0,
   created_at timestamptz default now()

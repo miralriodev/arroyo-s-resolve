@@ -67,7 +67,10 @@ exports.search = async (q) => {
 exports.getById = async (id) => {
   return prisma.accommodation.findUnique({
     where: { id },
-    include: { images: true, host: { select: { id: true, full_name: true, phone: true, contact_email: true } } },
+    include: {
+      images: true,
+      host: { select: { id: true, full_name: true, avatar_url: true, role: true } },
+    },
   });
 };
 
@@ -83,10 +86,7 @@ exports.create = async (hostId, payload) => {
       image_url: payload.image_url,
       property_type: payload.property_type,
       amenities: Array.isArray(payload.amenities) ? payload.amenities : [],
-      rules: payload.rules,
       max_guests: payload.max_guests || 1,
-      instant_book: !!payload.instant_book,
-      address: payload.address,
     },
   });
 };
@@ -105,10 +105,7 @@ exports.update = async (hostId, id, payload) => {
       image_url: payload.image_url,
       property_type: payload.property_type,
       amenities: payload.amenities,
-      rules: payload.rules,
       max_guests: payload.max_guests,
-      instant_book: payload.instant_book,
-      address: payload.address,
       updated_at: new Date(),
     },
   });

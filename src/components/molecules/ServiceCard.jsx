@@ -3,12 +3,15 @@ import { Link } from 'react-router-dom'
 
 const Card = styled.article`
   background: #fff;
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: ${({ theme }) => theme.radius.md};
-  box-shadow: ${({ theme }) => theme.shadow.sm};
+  border: 1px solid transparent;
+  border-radius: ${({ theme }) => theme.radius.lg};
+  box-shadow: ${({ theme }) => theme.shadow.md};
   overflow: hidden;
-  transition: transform 120ms ease;
-  &:hover { transform: translateY(-2px); }
+  transition: transform 140ms ease, box-shadow 140ms ease;
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: ${({ theme }) => theme.shadow.lg};
+  }
 `
 
 const Image = styled.img`
@@ -16,7 +19,7 @@ const Image = styled.img`
   height: 160px;
   object-fit: cover;
   @media (max-width: ${({ theme }) => theme.breakpoints.sm}) {
-    height: 140px;
+    height: ${({ $tallMobile }) => $tallMobile ? '220px' : '140px'};
   }
 `
 
@@ -37,10 +40,15 @@ const Meta = styled.div`
   color: ${({ theme }) => theme.colors.muted};
 `
 
-export function ServiceCard({ image, title, price, rating, to }) {
+export function ServiceCard({ image, title, price, rating, to, $tallMobile = false }) {
+  const CardLink = styled(Link)`
+    display: block;
+    text-decoration: none;
+    color: inherit;
+  `
   const Inner = (
     <Card>
-      <Image src={image} alt={title} />
+      <Image src={image} alt={title} $tallMobile={$tallMobile} />
       <Content>
         <Title>{title}</Title>
         <Meta>
@@ -50,7 +58,7 @@ export function ServiceCard({ image, title, price, rating, to }) {
       </Content>
     </Card>
   )
-  return to ? <Link to={to} aria-label={`Ver ${title}`}>{Inner}</Link> : Inner
+  return to ? <CardLink to={to} aria-label={`Ver ${title}`}>{Inner}</CardLink> : Inner
 }
 
 export default ServiceCard

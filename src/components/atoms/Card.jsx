@@ -3,7 +3,7 @@ import styled from 'styled-components'
 export const Card = styled.section`
   background: #fff;
   border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: ${({ theme }) => theme.radius.md};
+  border-radius: ${({ theme }) => theme.radius.lg};
   box-shadow: ${({ theme }) => theme.shadow.md};
   overflow: hidden;
 `

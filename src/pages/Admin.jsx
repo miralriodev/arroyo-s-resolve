@@ -1,10 +1,26 @@
+import { ChevronDownIcon } from '@radix-ui/react-icons'
 import { useEffect, useState } from 'react'
 import styled from 'styled-components'
-import AccommodationForm from '../components/molecules/AccommodationForm'
+import { adminUpdateBooking, adminUpdateBookingPayment, adminUpdateBookingStatus, listUsersWithMeta, updateUserRole } from '../api/admin'
+import { syncProfile as syncProfileRequest } from '../api/auth'
+import { listAllBookingsWithMeta } from '../api/bookings'
+import { createApiClient } from '../api/client'
+import Badge from '../components/atoms/Badge'
+import Button from '../components/atoms/Button'
+import { Card, CardContent, CardHeader, CardTitle } from '../components/atoms/Card'
+import Container from '../components/atoms/Container'
+import Heading from '../components/atoms/Heading'
+import Input from '../components/atoms/Input'
+import Label from '../components/atoms/Label'
+import Paragraph from '../components/atoms/Paragraph'
+import Select from '../components/atoms/Select'
+import { Table, TableActions, TableCell, TableHeader, TableRow } from '../components/atoms/Table'
+import Toolbar from '../components/atoms/Toolbar'
 import AccommodationList from '../components/molecules/AccommodationList'
+import { FieldLabel, FieldPill, FieldRow, RightIcon } from '../components/molecules/PillFields'
 import { createAccommodation, deleteAccommodation, listAccommodations, updateAccommodation } from '../supabase/accommodations'
-import { uploadServiceImage } from '../supabase/storage'
 import { useAuth } from '../supabase/AuthContext.jsx'
+import { uploadServiceImage } from '../supabase/storage'
 
 const Wrapper = styled.div`
   display: grid;
@@ -16,12 +32,33 @@ const ErrorText = styled.p`
 `
 
 export default function Admin() {
-  const { user } = useAuth()
+  const { user, session } = useAuth()
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState({ title: '', description: '', price: 0, rating: 0, category: 'alojamiento', location: '', image_url: '', image_file: null })
+  const [role, setRole] = useState(null)
+  const [apiHealth, setApiHealth] = useState(null)
+  const [bookings, setBookings] = useState([])
+  const [bookingsError, setBookingsError] = useState('')
+  const [bookingsLoading, setBookingsLoading] = useState(false)
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const [total, setTotal] = useState(null)
+  const [expandedBookingId, setExpandedBookingId] = useState(null)
+  const [editBooking, setEditBooking] = useState({})
+
+  // Users admin panel
+  const [users, setUsers] = useState([])
+  const [usersError, setUsersError] = useState('')
+  const [usersLoading, setUsersLoading] = useState(false)
+  const [usersPage, setUsersPage] = useState(1)
+  const [usersPageSize, setUsersPageSize] = useState(10)
+  const [usersTotal, setUsersTotal] = useState(null)
+  const [usersQ, setUsersQ] = useState('')
+  const [usersRole, setUsersRole] = useState('all')
 
   const load = async () => {
     setLoading(true)
@@ -37,6 +74,76 @@ export default function Admin() {
   }
 
   useEffect(() => { load() }, [])
+
+  useEffect(() => {
+    let active = true
+    ;(async () => {
+      try {
+        if (session?.access_token && user?.id) {
+          const profile = await syncProfileRequest(session.access_token, {})
+          if (active) setRole(profile?.role ?? null)
+        } else if (active) {
+          setRole(null)
+        }
+      } catch (_) {
+        if (active) setRole(null)
+      }
+    })()
+    return () => { active = false }
+  }, [session?.access_token, user?.id])
+
+  useEffect(() => {
+    let active = true
+    ;(async () => {
+      try {
+        const api = createApiClient(session?.access_token)
+        const { data } = await api.get('/health')
+        if (active) setApiHealth(data || null)
+      } catch (e) {
+        if (active) setApiHealth({ status: 'error', message: e?.message || 'No disponible' })
+      }
+    })()
+    return () => { active = false }
+  }, [session?.access_token])
+
+  useEffect(() => {
+    const loadBookings = async () => {
+      setBookingsLoading(true)
+      setBookingsError('')
+      try {
+        const params = { page, pageSize }
+        if (statusFilter !== 'all') params.status = statusFilter
+        const { items, total } = await listAllBookingsWithMeta(session?.access_token, params)
+        setBookings(Array.isArray(items) ? items : [])
+        setTotal(Number.isFinite(total) ? total : null)
+      } catch (e) {
+        setBookingsError(e?.response?.data?.error || e?.message || 'Error cargando reservas')
+      } finally {
+        setBookingsLoading(false)
+      }
+    }
+    if (role === 'admin' && session?.access_token) loadBookings()
+  }, [role, session?.access_token, statusFilter, page, pageSize])
+
+  useEffect(() => {
+    const loadUsers = async () => {
+      setUsersLoading(true)
+      setUsersError('')
+      try {
+        const params = { page: usersPage, pageSize: usersPageSize }
+        if (usersQ) params.q = usersQ
+        if (usersRole !== 'all') params.role = usersRole
+        const { items, total } = await listUsersWithMeta(session?.access_token, params)
+        setUsers(Array.isArray(items) ? items : [])
+        setUsersTotal(Number.isFinite(total) ? total : null)
+      } catch (e) {
+        setUsersError(e?.response?.data?.error || e?.message || 'Error cargando usuarios')
+      } finally {
+        setUsersLoading(false)
+      }
+    }
+    if (role === 'admin' && session?.access_token) loadUsers()
+  }, [role, session?.access_token, usersPage, usersPageSize, usersQ, usersRole])
 
   const onSubmit = async (e) => {
     e.preventDefault()
@@ -92,25 +199,245 @@ export default function Admin() {
   }
 
   return (
-    <Wrapper>
-      <h2>Admin</h2>
-      <p>Gestión de alojamientos (CRUD básico)</p>
-
-      {error && <ErrorText>{error}</ErrorText>}
-      {loading && <p>Cargando…</p>}
-
-      <AccommodationForm
-        form={form}
-        onChange={setForm}
-        onSubmit={onSubmit}
-        editing={!!editing}
-        onCancel={() => { setEditing(null); setForm({ title: '', description: '', price: 0, rating: 0, category: 'alojamiento', location: '', image_url: '', image_file: null }) }}
-      />
+    <Container>
+      <Wrapper>
+        <Heading as="h2" level={2}>Admin</Heading>
+        <Paragraph>Panel administrativo: resumen y gestión básica.</Paragraph>
 
       <div>
-        <h3>Listado</h3>
+        <h3>Resumen</h3>
+        <div><strong>Usuario:</strong> {user?.email || '-'}</div>
+        <div><strong>Rol:</strong> {role || '-'}</div>
+        <div><strong>API:</strong> {apiHealth?.status || 'desconocido'} {apiHealth?.version ? `(v${apiHealth.version})` : ''}</div>
+      </div>
+
+     
+
+      <div>
+        <h3>Listado de alojamientos</h3>
         <AccommodationList items={items} onEdit={onEdit} onDelete={onDelete} />
       </div>
-    </Wrapper>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Reservas (Admin)</CardTitle>
+        </CardHeader>
+        <CardContent>
+        <Toolbar style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+          <FieldPill>
+            <FieldLabel>Estado</FieldLabel>
+            <FieldRow>
+              <Select $bare value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                <option value="all">Todos</option>
+                <option value="pending">Pendiente</option>
+                <option value="confirmed">Confirmada</option>
+                <option value="rejected">Rechazada</option>
+              </Select>
+              <RightIcon aria-hidden="true"><ChevronDownIcon /></RightIcon>
+            </FieldRow>
+          </FieldPill>
+        </Toolbar>
+        {bookingsLoading && <p>Cargando reservas…</p>}
+        {bookingsError && <ErrorText>{bookingsError}</ErrorText>}
+        {!bookingsLoading && !bookingsError && (
+          bookings.length === 0 ? (
+            <p>No hay reservas.</p>
+          ) : (
+            <div>
+              <Table>
+                <TableHeader cols="120px 1fr 160px 160px 140px 200px">
+                  <TableCell>Estado</TableCell>
+                  <TableCell>Alojamiento</TableCell>
+                  <TableCell>Huésped</TableCell>
+                  <TableCell>Fechas</TableCell>
+                  <TableCell>Pago</TableCell>
+                  <TableCell>Acciones</TableCell>
+                </TableHeader>
+                {bookings.map((b) => {
+                  const start = new Date(b.start_date).toLocaleDateString()
+                  const end = new Date(b.end_date).toLocaleDateString()
+                  return (
+                    <div key={b.id}>
+                      <TableRow cols="120px 1fr 160px 160px 140px 200px">
+                        <TableCell>
+                        <FieldRow>
+                          <Select defaultValue={b.status} onChange={(e) => setEditBooking(prev => ({ ...prev, [b.id]: { ...(prev[b.id] || {}), status: e.target.value } }))}>
+                            <option value="pending">Pendiente</option>
+                            <option value="confirmed">Confirmada</option>
+                            <option value="rejected">Rechazada</option>
+                          </Select>
+                          <RightIcon aria-hidden="true"><ChevronDownIcon /></RightIcon>
+                        </FieldRow>
+                        </TableCell>
+                        <TableCell>
+                         {b.accommodation?.title}
+                         {b.accommodation?.location ? ` · ${b.accommodation.location}` : ''}
+                        </TableCell>
+                        <TableCell>{b.user?.full_name || b.user?.email || '-'}</TableCell>
+                        <TableCell>{start} — {end}</TableCell>
+                        <TableCell>
+                         ${Number(b.amount)}
+                        {b.payment_confirmed_by_host ? (
+                           <span style={{ marginLeft: 6 }}>
+                             <Badge $variant="success" $compact>Pagado</Badge>
+                           </span>
+                         ) : (
+                           <span style={{ marginLeft: 6 }}>
+                             <Badge $variant="warn" $compact>Pendiente</Badge>
+                           </span>
+                         )}
+                         <Label style={{ marginLeft: 8 }}>
+                          <input type="checkbox" checked={Boolean(b.payment_confirmed_by_host)} onChange={async (e) => {
+                            try {
+                              await adminUpdateBookingPayment(session?.access_token, b.id, e.target.checked)
+                              setBookings(prev => prev.map(x => x.id === b.id ? { ...x, payment_confirmed_by_host: e.target.checked } : x))
+                            } catch (err) {
+                              alert(err?.response?.data?.error || err?.message || 'Error al marcar pago')
+                            }
+                          }} />
+                          {' '}Marcar pago
+                         </Label>
+                        </TableCell>
+                        <TableActions>
+                        <Button title="Guarda el estado de la reserva" onClick={async () => {
+                          const newStatus = editBooking?.[b.id]?.status || b.status
+                          try {
+                            await adminUpdateBookingStatus(session?.access_token, b.id, newStatus)
+                            setBookings(prev => prev.map(x => x.id === b.id ? { ...x, status: newStatus } : x))
+                          } catch (err) {
+                            alert(err?.response?.data?.error || err?.message || 'Error al cambiar estado')
+                          }
+                        }}>Guardar estado</Button>
+                        <Button title="Ver u ocultar edición de la reserva" onClick={() => setExpandedBookingId(id => id === b.id ? null : b.id)}>
+                          {expandedBookingId === b.id ? 'Ocultar' : 'Ver/Editar'}
+                        </Button>
+                        </TableActions>
+                      </TableRow>
+                    {expandedBookingId === b.id && (
+                      <div style={{ marginTop: 8, padding: 8, background: '#fafafa', border: '1px solid #eee' }}>
+                        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                          <Label>
+                            Inicio:
+                            <Input as="input" type="date" defaultValue={String(b.start_date).slice(0,10)} onChange={(e) => setEditBooking(prev => ({ ...prev, [b.id]: { ...(prev[b.id] || {}), start_date: e.target.value } }))} />
+                          </Label>
+                          <Label>
+                            Fin:
+                            <Input as="input" type="date" defaultValue={String(b.end_date).slice(0,10)} onChange={(e) => setEditBooking(prev => ({ ...prev, [b.id]: { ...(prev[b.id] || {}), end_date: e.target.value } }))} />
+                          </Label>
+                          <Label>
+                            Huéspedes:
+                            <Input as="input" type="number" min={1} defaultValue={b.guests || 1} onChange={(e) => setEditBooking(prev => ({ ...prev, [b.id]: { ...(prev[b.id] || {}), guests: Number(e.target.value) } }))} />
+                          </Label>
+                          <Label>
+                            Monto:
+                            <Input as="input" type="number" min={0} step={0.01} defaultValue={Number(b.amount)} onChange={(e) => setEditBooking(prev => ({ ...prev, [b.id]: { ...(prev[b.id] || {}), amount: Number(e.target.value) } }))} />
+                          </Label>
+                        </div>
+                        <div style={{ marginTop: 8 }}>
+                          <Button onClick={async () => {
+                            try {
+                              const payload = editBooking?.[b.id] || {}
+                              await adminUpdateBooking(session?.access_token, b.id, payload)
+                              setBookings(prev => prev.map(x => x.id === b.id ? { ...x, ...payload } : x))
+                              alert('Reserva actualizada')
+                            } catch (err) {
+                              alert(err?.response?.data?.error || err?.message || 'Error al actualizar')
+                            }
+                          }}>Guardar cambios</Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+              </Table>
+              <Toolbar>
+                <Button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}>Anterior</Button>
+                <Button onClick={() => setPage(p => p + 1)} disabled={Number.isFinite(total) ? (page * pageSize >= total) : bookings.length < pageSize}>Siguiente</Button>
+              </Toolbar>
+            </div>
+          )
+        )}
+        </CardContent>
+      </Card>
+
+      <div style={{ marginTop: 24 }}>
+        <Card>
+          <CardHeader>
+            <CardTitle>Usuarios (Admin)</CardTitle>
+          </CardHeader>
+          <CardContent>
+        <Toolbar style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+          <FieldPill>
+            <FieldLabel>Buscar</FieldLabel>
+            <Input $bare placeholder="Nombre o email" value={usersQ} onChange={(e) => { setUsersQ(e.target.value); setUsersPage(1); }} />
+          </FieldPill>
+          <FieldPill>
+            <FieldLabel>Rol</FieldLabel>
+            <FieldRow>
+              <Select $bare value={usersRole} onChange={(e) => { setUsersRole(e.target.value); setUsersPage(1); }}>
+                <option value="all">Todos</option>
+                <option value="visitor">Visitante</option>
+                <option value="host">Anfitrión</option>
+                <option value="admin">Admin</option>
+              </Select>
+              <RightIcon aria-hidden="true"><ChevronDownIcon /></RightIcon>
+            </FieldRow>
+          </FieldPill>
+        </Toolbar>
+        {usersLoading && <p>Cargando usuarios…</p>}
+        {usersError && <ErrorText>{usersError}</ErrorText>}
+        {!usersLoading && !usersError && (
+          users.length === 0 ? (
+            <p>No hay usuarios.</p>
+          ) : (
+            <div>
+              <Table>
+                <TableHeader cols="220px 1fr 160px 140px">
+                  <TableCell>Email</TableCell>
+                  <TableCell>Nombre</TableCell>
+                  <TableCell>Creado</TableCell>
+                  <TableCell>Rol</TableCell>
+                </TableHeader>
+                {users.map(u => (
+                  <div key={u.id}>
+                    <TableRow cols="220px 1fr 160px 140px">
+                      <TableCell>{u.user?.email || '-'}</TableCell>
+                      <TableCell>{u.full_name || '-'}</TableCell>
+                      <TableCell>{u.created_at ? new Date(u.created_at).toLocaleDateString() : '-'}</TableCell>
+                      <TableCell>
+                        <FieldRow>
+                        <Select defaultValue={u.role} onChange={async (e) => {
+                          try {
+                            const newRole = e.target.value
+                            await updateUserRole(session?.access_token, u.id, newRole)
+                            setUsers(prev => prev.map(x => x.id === u.id ? { ...x, role: newRole } : x))
+                          } catch (err) {
+                            alert(err?.response?.data?.error || err?.message || 'Error al cambiar rol')
+                          }
+                        }}>
+                          <option value="visitor">Visitante</option>
+                          <option value="host">Anfitrión</option>
+                          <option value="admin">Admin</option>
+                        </Select>
+                        <RightIcon aria-hidden="true"><ChevronDownIcon /></RightIcon>
+                        </FieldRow>
+                      </TableCell>
+                    </TableRow>
+                  </div>
+                ))}
+              </Table>
+              <Toolbar>
+                <Button onClick={() => setUsersPage(p => Math.max(1, p - 1))} disabled={usersPage <= 1}>Anterior</Button>
+                <Button onClick={() => setUsersPage(p => p + 1)} disabled={Number.isFinite(usersTotal) ? (usersPage * usersPageSize >= usersTotal) : users.length < usersPageSize}>Siguiente</Button>
+              </Toolbar>
+            </div>
+          )
+        )}
+          </CardContent>
+        </Card>
+      </div>
+      </Wrapper>
+    </Container>
   )
 }

@@ -44,15 +44,15 @@ async function main() {
     ],
   });
 
-  // Disponibilidad del alojamiento 1 (próximos 5 días)
+  // Disponibilidad del alojamiento 1 (próximos 365 días)
   const today = new Date();
-  const avail1 = [];
-  for (let i = 0; i < 5; i++) {
+  const acc1Avail = [];
+  for (let i = 0; i < 365; i++) {
     const d = new Date(today);
     d.setDate(d.getDate() + i);
-    avail1.push({ accommodationId: acc1.id, date: d, capacity: 2 });
+    acc1Avail.push({ accommodationId: acc1.id, date: d, capacity: 2 });
   }
-  await prisma.availability.createMany({ data: avail1 });
+  await prisma.availability.createMany({ data: acc1Avail, skipDuplicates: true });
 
   // Alojamiento 2
   const acc2 = await prisma.accommodation.create({
@@ -77,13 +77,14 @@ async function main() {
     ],
   });
 
-  const avail2 = [];
-  for (let i = 1; i <= 3; i++) {
+  // Disponibilidad del alojamiento 2 (próximos 365 días)
+  const acc2Avail = [];
+  for (let i = 0; i < 365; i++) {
     const d = new Date(today);
     d.setDate(d.getDate() + i);
-    avail2.push({ accommodationId: acc2.id, date: d, capacity: 1 });
+    acc2Avail.push({ accommodationId: acc2.id, date: d, capacity: 1 });
   }
-  await prisma.availability.createMany({ data: avail2 });
+  await prisma.availability.createMany({ data: acc2Avail, skipDuplicates: true });
 
   console.log('Seed completado:', { acc1: acc1.id, acc2: acc2.id });
 }

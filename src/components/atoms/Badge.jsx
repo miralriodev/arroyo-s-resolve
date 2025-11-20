@@ -1,12 +1,50 @@
 import styled from 'styled-components'
 
 const Badge = styled.span`
-  display: inline-block;
-  padding: ${({ theme }) => theme.spacing(2)} ${({ theme }) => theme.spacing(3)};
+  display: inline-flex;
+  align-items: center;
+  gap: ${({ theme, $compact }) => $compact ? theme.spacing(1) : theme.spacing(2)};
+  padding: ${({ theme, $compact }) => $compact ? `${theme.spacing(1)} ${theme.spacing(2)}` : `${theme.spacing(2)} ${theme.spacing(3)}`};
   border-radius: ${({ theme }) => theme.radius.sm};
-  font-size: 0.85rem;
-  background: ${({ theme, $variant }) => $variant === 'success' ? theme.colors.success : $variant === 'danger' ? theme.colors.danger : theme.colors.secondary};
-  color: #fff;
+  font-size: ${({ $compact }) => $compact ? '0.8rem' : '0.85rem'};
+  line-height: 1;
+  background: ${({ theme }) => theme.colors.surface};
+  color: ${({ theme }) => theme.colors.text};
+  box-shadow: inset 0 0 0 1px
+    ${({ theme, $variant }) =>
+      $variant === 'success'
+        ? theme.colors.success
+        : $variant === 'danger'
+        ? theme.colors.danger
+        : $variant === 'warn'
+        ? theme.colors.warn
+        : theme.colors.secondary};
+
+  &::before {
+    content: '';
+    display: inline-block;
+    width: ${({ $compact }) => $compact ? '7px' : '8px'};
+    height: ${({ $compact }) => $compact ? '7px' : '8px'};
+    border-radius: 50%;
+    background: ${({ theme, $variant }) =>
+      $variant === 'success'
+        ? theme.colors.success
+        : $variant === 'danger'
+        ? theme.colors.danger
+        : $variant === 'warn'
+        ? theme.colors.warn
+        : theme.colors.secondary};
+  }
+
+  @media (max-width: ${({ theme }) => theme.breakpoints.sm}) {
+    font-size: 0; /* oculta el texto, deja visible el dot */
+    padding: 0;
+    gap: 0;
+    background: transparent;
+    box-shadow: none;
+    min-width: 8px;
+    min-height: 8px;
+  }
 `
 
 export default Badge

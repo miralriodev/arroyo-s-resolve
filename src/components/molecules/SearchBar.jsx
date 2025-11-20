@@ -1,6 +1,7 @@
+import { ArrowRightIcon } from '@radix-ui/react-icons'
 import styled from 'styled-components'
 import Input from '../atoms/Input'
-import Button from '../atoms/Button'
+import { FieldLabel, FieldPill } from './PillFields'
 
 const Wrapper = styled.form`
   display: grid;
@@ -12,6 +13,23 @@ const Wrapper = styled.form`
   }
 `
 
+const ActionCircle = styled.button`
+  width: 48px;
+  height: 48px;
+  border-radius: 9999px;
+  border: none;
+  background: ${({ theme }) => theme.colors.primary};
+  color: #fff;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: ${({ theme }) => theme.shadow.sm};
+  cursor: pointer;
+  &:hover { background: ${({ theme }) => theme.colors.primaryDark}; }
+  &:focus { outline: none; box-shadow: 0 0 0 3px rgba(46,125,50,0.2); }
+`
+
 export function SearchBar({ onSearch }) {
   function handleSubmit(e) {
     e.preventDefault()
@@ -20,8 +38,13 @@ export function SearchBar({ onSearch }) {
   }
   return (
     <Wrapper onSubmit={handleSubmit}>
-      <Input name="q" placeholder="Buscar servicios..." />
-      <Button type="submit">Buscar</Button>
+      <FieldPill>
+        <FieldLabel>Buscar</FieldLabel>
+        <Input $bare name="q" placeholder="Servicios, categorías..." />
+      </FieldPill>
+      <ActionCircle type="submit" aria-label="Buscar">
+        <ArrowRightIcon />
+      </ActionCircle>
     </Wrapper>
   )
 }

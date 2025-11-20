@@ -17,6 +17,10 @@ router.use('/bookings', bookingsRoutes);
 const reviewsRoutes = require('../modules/reviews/reviews.routes');
 router.use('/reviews', reviewsRoutes);
 
+// Rutas administrativas
+const adminRoutes = require('../modules/admin/admin.routes');
+router.use('/admin', adminRoutes);
+
 // Salud del API
 router.get('/health', (req, res) => {
   res.json({ status: 'ok', version: 'v1' });

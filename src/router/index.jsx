@@ -1,10 +1,9 @@
 import { Suspense, lazy } from 'react'
-import { createHashRouter } from 'react-router-dom'
+import { createBrowserRouter } from 'react-router-dom'
 import RequireAuth from '../supabase/RequireAuth.jsx'
 import RequireRole from '../supabase/RequireRole.jsx'
 import AppShell from '../templates/AppShell'
 
-const Services = lazy(() => import('../pages/Services'))
 const ServiceDetail = lazy(() => import('../pages/ServiceDetail'))
 const Accommodations = lazy(() => import('../pages/Accommodations'))
 const AccommodationDetail = lazy(() => import('../pages/AccommodationDetail'))
@@ -15,8 +14,9 @@ const Login = lazy(() => import('../pages/Login'))
 const Register = lazy(() => import('../pages/Register'))
 const Privacy = lazy(() => import('../pages/Privacy'))
 const DeleteAccount = lazy(() => import('../pages/DeleteAccount'))
+const MyBookings = lazy(() => import('../pages/MyBookings'))
 
-export const router = createHashRouter([
+export const router = createBrowserRouter([
   {
     element: <AppShell />,
     children: [
@@ -25,14 +25,6 @@ export const router = createHashRouter([
         element: (
           <Suspense fallback={<div>Cargando…</div>}>
             <Accommodations />
-          </Suspense>
-        ),
-      },
-      {
-        path: '/servicios',
-        element: (
-          <Suspense fallback={<div>Cargando…</div>}>
-            <Services />
           </Suspense>
         ),
       },
@@ -119,6 +111,16 @@ export const router = createHashRouter([
         element: (
           <Suspense fallback={<div>Cargando…</div>}>
             <DeleteAccount />
+          </Suspense>
+        ),
+      },
+      {
+        path: '/mis-reservas',
+        element: (
+          <Suspense fallback={<div>Cargando…</div>}>
+            <RequireAuth>
+              <MyBookings />
+            </RequireAuth>
           </Suspense>
         ),
       },
