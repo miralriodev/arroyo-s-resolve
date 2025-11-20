@@ -58,12 +58,13 @@ jobs:
       - name: Restart backend services on VPS
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT }}
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
           script: |
             set -euo pipefail
+            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             docker pull ${{ env.IMAGE_NAME }}:latest
             docker compose -f "${{ secrets.COMPOSE_PATH }}" pull api_1 api_2
             docker compose -f "${{ secrets.COMPOSE_PATH }}" up -d api_1 api_2
