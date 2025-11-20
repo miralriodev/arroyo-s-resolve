@@ -64,9 +64,18 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             set -euo pipefail
-            mkdir -p ~/.docker
-            export DOCKER_CONFIG=~/.docker
-            echo ${{ secrets.GITHUB_TOKEN }} | docker --config ~/.docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            # Limpieza condicional para recuperar espacio si la partición de Docker tiene <1GB libre
+            DOCKER_ROOT=$(docker info --format '{{.DockerRootDir}}' 2>/dev/null || echo /var/lib/docker)
+            FREE_MB=$(df -Pm "$DOCKER_ROOT" | awk 'NR==2{print $4}')
+            if [ -n "${FREE_MB:-}" ] && [ "$FREE_MB" -lt 1024 ]; then
+              echo "Poco espacio libre en $DOCKER_ROOT (${FREE_MB} MB). Ejecutando docker system prune -af..."
+              docker system prune -af || true
+            else
+              echo "Espacio suficiente en $DOCKER_ROOT (${FREE_MB:-desconocido} MB)."
+            fi
+            mkdir -p /tmp/docker-config
+            export DOCKER_CONFIG=/tmp/docker-config
+            echo ${{ secrets.GITHUB_TOKEN }} | docker --config /tmp/docker-config login ghcr.io -u ${{ github.actor }} --password-stdin
             docker pull ${{ env.IMAGE_NAME }}:latest
             docker compose -f "${{ secrets.COMPOSE_PATH }}" pull api_1 api_2
             docker compose -f "${{ secrets.COMPOSE_PATH }}" up -d api_1 api_2
