@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "seed": "node src/scripts/seed.js"
+    "seed": "node src/scripts/seed.js",
+    "migrate:deploy": "prisma migrate deploy"
   },
   "dependencies": {
     "@prisma/client": "^5.18.0",
@@ -21,10 +22,10 @@
     "helmet": "^7.0.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
-    "zod": "^4.1.12"
+    "zod": "^4.1.12",
+    "prisma": "^5.18.0"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1",
-    "prisma": "^5.18.0"
+    "nodemon": "^3.0.1"
   }
 }
