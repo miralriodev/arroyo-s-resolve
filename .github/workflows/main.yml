@@ -88,8 +88,15 @@ jobs:
             echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
             echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> .env
             echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
-           
+
             echo "DIRECT_URL=${{ secrets.SUPABASE_DIRECT_URL }}" >> .env
+            # Log sanitizado: mostrar host:puerto de las URLs (sin credenciales)
+            DB_URL=$(grep -E '^DATABASE_URL=' .env | head -n1 | cut -d'=' -f2 | tr -d '"')
+            DIRECT_URL=$(grep -E '^DIRECT_URL=' .env | head -n1 | cut -d'=' -f2 | tr -d '"')
+            DB_HOST_PORT=$(echo "$DB_URL" | sed -n 's#.*@\([^/]*\)/.*#\1#p')
+            DIRECT_HOST_PORT=$(echo "$DIRECT_URL" | sed -n 's#.*@\([^/]*\)/.*#\1#p')
+            echo "DATABASE_URL host:port -> $DB_HOST_PORT"
+            echo "DIRECT_URL host:port   -> $DIRECT_HOST_PORT"
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
             docker pull ghcr.io/${{ github.repository_owner }}/arroyo-seco-api:latest
