@@ -66,7 +66,7 @@ jobs:
             set -euo pipefail
             mkdir -p ~/.docker
             export DOCKER_CONFIG=~/.docker
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            echo ${{ secrets.GITHUB_TOKEN }} | docker --config ~/.docker login ghcr.io -u ${{ github.actor }} --password-stdin
             docker pull ${{ env.IMAGE_NAME }}:latest
             docker compose -f "${{ secrets.COMPOSE_PATH }}" pull api_1 api_2
             docker compose -f "${{ secrets.COMPOSE_PATH }}" up -d api_1 api_2
