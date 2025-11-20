@@ -34,3 +34,30 @@ exports.getContact = async (req, res, next) => {
     res.json(contact);
   } catch (e) { next(e); }
 };
+
+exports.listMine = async (req, res, next) => {
+  try {
+    const bookings = await service.listMyBookings(req.user.id, req.query);
+    if (req.query.page || req.query.pageSize) {
+      const total = await service.countMyBookings(req.user.id, req.query);
+      res.set('X-Total-Count', String(total));
+      if (req.query.page) res.set('X-Page', String(req.query.page));
+      if (req.query.pageSize) res.set('X-Page-Size', String(req.query.pageSize));
+    }
+    res.json(bookings);
+  } catch (e) { next(e); }
+};
+
+exports.listHost = async (req, res, next) => {
+  try {
+    const bookings = await service.listHostBookings(req.user.id, req.query);
+    // Añadir total para paginación en cabecera si se solicita paginación
+    if (req.query.page || req.query.pageSize) {
+      const total = await service.countHostBookings(req.user.id, req.query);
+      res.set('X-Total-Count', String(total));
+      if (req.query.page) res.set('X-Page', String(req.query.page));
+      if (req.query.pageSize) res.set('X-Page-Size', String(req.query.pageSize));
+    }
+    res.json(bookings);
+  } catch (e) { next(e); }
+};

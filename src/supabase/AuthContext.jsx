@@ -51,8 +51,18 @@ export const AuthContextProvider = ({ children }) => {
     if (error) throw error
   }
 
+  const resetPassword = async (email) => {
+    if (!email) throw new Error('Ingresa tu email')
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      // Redirige al login después de actualizar la contraseña en Supabase
+      redirectTo: `${window.location.origin}/login`,
+    })
+    if (error) throw error
+    return true
+  }
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, signIn, signUp, signOut, resetPassword }}>
       {children}
     </AuthContext.Provider>
   )

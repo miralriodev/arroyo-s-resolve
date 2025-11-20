@@ -1,18 +1,18 @@
-import styled from 'styled-components'
 import { useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import styled from 'styled-components'
 import { useAuth } from '../../supabase/AuthContext.jsx'
-import { useNavigate, Link, useLocation } from 'react-router-dom'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../atoms/Card'
-import Label from '../atoms/Label'
-import Input from '../atoms/Input'
 import Button from '../atoms/Button'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../atoms/Card'
 import FormMessage from '../atoms/FormMessage'
+import Input from '../atoms/Input'
+import Label from '../atoms/Label'
 
 const Center = styled.main`
   min-height: calc(100vh - 120px);
   display: grid;
   place-items: center;
-  padding: ${({ theme }) => theme.spacing(6)};
+  padding: ${({ theme }) => theme.spacing(5)};
 `
 
 const Field = styled.div`
@@ -21,7 +21,7 @@ const Field = styled.div`
 `
 
 export default function LoginForm() {
-  const { signIn } = useAuth()
+  const { signIn, resetPassword } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const redirect = new URLSearchParams(location.search).get('redirect') || '/'
@@ -29,10 +29,12 @@ export default function LoginForm() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [resetInfo, setResetInfo] = useState(null)
 
   const onSubmit = async (e) => {
     e.preventDefault()
     setError(null)
+    setResetInfo(null)
     setLoading(true)
     try {
       await signIn(email, password)
@@ -41,6 +43,18 @@ export default function LoginForm() {
       setError(err?.message ?? 'Error al iniciar sesión')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const onResetPassword = async () => {
+    setError(null)
+    setResetInfo(null)
+    try {
+      if (!email) throw new Error('Ingresa tu email para recuperar contraseña')
+      await resetPassword(email)
+      setResetInfo('Te enviamos un correo para restablecer tu contraseña')
+    } catch (err) {
+      setError(err?.message ?? 'No se pudo enviar el correo de recuperación')
     }
   }
 
@@ -68,6 +82,8 @@ export default function LoginForm() {
             <FormMessage>
               ¿No tienes cuenta? <Link to="/registro">Regístrate</Link>
             </FormMessage>
+            <Button type="button" $minimal onClick={onResetPassword}>Recuperar contraseña</Button>
+            {resetInfo && <FormMessage tone="success">{resetInfo}</FormMessage>}
           </CardFooter>
         </form>
       </Card>

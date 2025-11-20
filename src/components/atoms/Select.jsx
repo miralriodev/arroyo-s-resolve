@@ -1,18 +1,17 @@
 import styled from 'styled-components'
 
-const Input = styled.input`
+const Select = styled.select`
   padding: ${({ theme, $bare }) => $bare ? `${theme.spacing(1)} 0` : theme.spacing(3)};
   border: ${({ theme, $minimal, $bare }) => $bare ? 'none' : `1px solid ${$minimal ? theme.colors.text : theme.colors.border}`};
   border-radius: ${({ theme, $bare }) => $bare ? 0 : theme.radius.sm};
   background: ${({ $bare }) => $bare ? 'transparent' : '#fff'};
-  width: 100%;
   color: ${({ theme }) => theme.colors.text};
   font-size: 0.95rem;
   box-shadow: ${({ theme, $minimal, $bare }) => $bare ? 'none' : ($minimal ? 'none' : theme.shadow.sm)};
   transition: box-shadow 120ms ease, border-color 120ms ease, background 120ms ease;
-  ::placeholder {
-    color: ${({ theme }) => theme.colors.muted};
-  }
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
   &:hover {
     box-shadow: ${({ theme, $minimal, $bare }) => $bare ? 'none' : ($minimal ? theme.shadow.sm : theme.shadow.md)};
   }
@@ -23,4 +22,4 @@ const Input = styled.input`
   }
 `
 
-export default Input
+export default Select

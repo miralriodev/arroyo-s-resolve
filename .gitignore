@@ -26,3 +26,4 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+android/app/src/main/java/con/caliyoo/resolve/MainActivity.java

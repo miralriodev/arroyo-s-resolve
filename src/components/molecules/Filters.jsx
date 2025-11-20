@@ -1,4 +1,6 @@
 import styled from 'styled-components'
+import Select from '../atoms/Select'
+import { FieldPill, FieldLabel } from './PillFields'
 
 const Wrapper = styled.div`
   display: flex;
@@ -10,11 +12,7 @@ const Wrapper = styled.div`
   }
 `
 
-const Select = styled.select`
-  padding: ${({ theme }) => theme.spacing(3)};
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: ${({ theme }) => theme.radius.sm};
-  background: #fff;
+const SelectWrap = styled.div`
   @media (max-width: ${({ theme }) => theme.breakpoints.sm}) {
     width: 100%;
   }
@@ -29,21 +27,36 @@ export function Filters({ onChange }) {
   }
   return (
     <Wrapper>
-      <Select name="categoria" onChange={handleChange} defaultValue="">
-        <option value="">Categoría</option>
-        <option value="alojamiento">Alojamiento</option>
-        <option value="experiencia">Experiencia</option>
-      </Select>
-      <Select name="precio" onChange={handleChange} defaultValue="">
-        <option value="">Precio</option>
-        <option value="asc">Menor precio</option>
-        <option value="desc">Mayor precio</option>
-      </Select>
-      <Select name="ubicacion" onChange={handleChange} defaultValue="">
-        <option value="">Ubicación</option>
-        <option value="centro">Centro</option>
-        <option value="periferia">Periferia</option>
-      </Select>
+      <SelectWrap>
+        <FieldPill>
+          <FieldLabel>Categoría</FieldLabel>
+          <Select $bare name="categoria" onChange={handleChange} defaultValue="">
+            <option value="">Todas</option>
+            <option value="alojamiento">Alojamiento</option>
+            <option value="experiencia">Experiencia</option>
+          </Select>
+        </FieldPill>
+      </SelectWrap>
+      <SelectWrap>
+        <FieldPill>
+          <FieldLabel>Precio</FieldLabel>
+          <Select $bare name="precio" onChange={handleChange} defaultValue="">
+            <option value="">Cualquiera</option>
+            <option value="asc">Menor precio</option>
+            <option value="desc">Mayor precio</option>
+          </Select>
+        </FieldPill>
+      </SelectWrap>
+      <SelectWrap>
+        <FieldPill>
+          <FieldLabel>Ubicación</FieldLabel>
+          <Select $bare name="ubicacion" onChange={handleChange} defaultValue="">
+            <option value="">Cualquiera</option>
+            <option value="centro">Centro</option>
+            <option value="periferia">Periferia</option>
+          </Select>
+        </FieldPill>
+      </SelectWrap>
     </Wrapper>
   )
 }

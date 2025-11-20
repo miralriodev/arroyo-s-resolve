@@ -3,7 +3,7 @@ import styled from 'styled-components'
 import Filters from '../components/molecules/Filters'
 import SearchBar from '../components/molecules/SearchBar'
 import ServiceCard from '../components/molecules/ServiceCard'
-import { listAccommodations } from '../supabase/accommodations'
+import { searchAccommodations } from '../api/accommodations'
 
 const Wrapper = styled.div`
   display: grid;
@@ -13,7 +13,8 @@ const Wrapper = styled.div`
 const Grid = styled.div`
   display: grid;
   gap: ${({ theme }) => theme.spacing(4)};
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  align-items: stretch;
   @media (max-width: ${({ theme }) => theme.breakpoints.sm}) {
     grid-template-columns: 1fr;
   }
@@ -37,19 +38,19 @@ export default function Services() {
   useEffect(() => {
     let active = true
     setLoading(true)
-    // Primero intenta cargar desde Supabase; si falla, usa el fallback local
+    // Primero intenta cargar desde API; si falla, usa el fallback local
     ;(async () => {
       try {
-        const rows = await listAccommodations()
+        const rows = await searchAccommodations({})
         const mapped = (rows || []).map(r => ({
           id: r.id,
           title: r.title,
           price: r.price ?? 0,
           rating: r.rating ?? 0,
-          image: r.image_url || '/vite.svg',
-          categoria: r.category || 'alojamiento',
-          ubicacion: r.location || 'centro',
-          descripcion: r.description || ''
+          image: r.image_url || r.image || '/vite.svg',
+          categoria: r.category || r.categoria || 'alojamiento',
+          ubicacion: r.location || r.ubicacion || 'centro',
+          descripcion: r.description || r.descripcion || ''
         }))
         if (active) { setServices(mapped); setError('') }
       } catch (_) {
@@ -57,7 +58,7 @@ export default function Services() {
           setServices(fallbackServices)
           const msg = _.message ? `Modo offline o error de red: ${_.message}` : 'Modo offline o error de red'
           setError(msg)
-          console.error('listAccommodations failed:', _)
+          console.error('searchAccommodations failed:', _)
         }
       } finally {
         active && setLoading(false)
