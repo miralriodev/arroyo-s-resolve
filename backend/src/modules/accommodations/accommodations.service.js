@@ -86,6 +86,7 @@ exports.create = async (hostId, payload) => {
       image_url: payload.image_url,
       property_type: payload.property_type,
       amenities: Array.isArray(payload.amenities) ? payload.amenities : [],
+      rules: payload.rules,
       max_guests: payload.max_guests || 1,
     },
   });
@@ -105,6 +106,7 @@ exports.update = async (hostId, id, payload) => {
       image_url: payload.image_url,
       property_type: payload.property_type,
       amenities: payload.amenities,
+      rules: payload.rules,
       max_guests: payload.max_guests,
       updated_at: new Date(),
     },
