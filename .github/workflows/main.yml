@@ -88,10 +88,12 @@ jobs:
             echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
             echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> .env
             echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
+           
+            echo "DIRECT_URL=${{ secrets.SUPABASE_DIRECT_URL }}" >> .env
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            # Pull explícito de la imagen más reciente
+            
             docker pull ghcr.io/${{ github.repository_owner }}/arroyo-seco-api:latest
-            # Aplicar migraciones antes de levantar servicios
+            
             docker run --rm --env-file .env ghcr.io/${{ github.repository_owner }}/arroyo-seco-api:latest sh -c "npx prisma migrate deploy"
             docker-compose pull
             docker-compose down
