@@ -12,28 +12,31 @@ export const FieldPill = styled.label`
   gap: ${({ theme }) => theme.spacing(1)};
   padding: ${({ theme }) => `${theme.spacing(3)} ${theme.spacing(4)}`};
   min-height: 72px;
-  border: 1.5px solid rgba(33, 53, 71, 0.30);
+  border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: ${({ theme }) => theme.radius.lg};
   background: #fff;
   color: ${({ theme }) => theme.colors.text};
-  box-shadow: ${({ theme }) => theme.shadow.sm};
+  box-shadow: none;
   line-height: 1.25;
   &:focus-within {
-    box-shadow: 0 0 0 3px rgba(33, 53, 71, 0.12);
+    box-shadow: 0 0 0 3px rgba(0,0,0,0.06);
   }
 `
 
 export const PillGroup = styled.div`
   display: grid;
   grid-template-columns: repeat(${({ cols = 2 }) => cols}, 1fr);
-  border: 1.5px solid rgba(33, 53, 71, 0.30);
+  border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: ${({ theme }) => theme.radius.lg};
   background: #fff;
-  box-shadow: ${({ theme }) => theme.shadow.sm};
+  box-shadow: none;
   overflow: hidden;
   align-items: stretch;
   &:focus-within {
-    box-shadow: 0 0 0 3px rgba(33, 53, 71, 0.12);
+    box-shadow: 0 0 0 3px rgba(0,0,0,0.06);
+  }
+  @media (max-width: ${({ theme }) => theme.breakpoints.md}) {
+    grid-template-columns: 1fr;
   }
 `
 

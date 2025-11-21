@@ -1,9 +1,20 @@
+import { CalendarIcon } from '@radix-ui/react-icons'
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { useAuth } from '../supabase/AuthContext'
+import styled from 'styled-components'
 import { getAccommodation, listAvailability } from '../api/accommodations'
 import { requestBooking } from '../api/bookings'
 import { listAccommodationReviews } from '../api/reviews'
+import Badge from '../components/atoms/Badge'
+import Button from '../components/atoms/Button'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/atoms/Card'
+import Container from '../components/atoms/Container'
+import FormMessage from '../components/atoms/FormMessage'
+import Heading from '../components/atoms/Heading'
+import Input from '../components/atoms/Input'
+import { Table, TableCell, TableHeader, TableRow } from '../components/atoms/Table'
+import { FieldLabel, FieldRow, PillCell, PillGroup, RightIcon } from '../components/molecules/PillFields'
+import { useAuth } from '../supabase/AuthContext'
 
 export default function AccommodationDetail() {
   const { id } = useParams()
@@ -15,6 +26,46 @@ export default function AccommodationDetail() {
   const [bookingStatus, setBookingStatus] = useState(null)
   const [availability, setAvailability] = useState([])
   const [availStatus, setAvailStatus] = useState(null)
+
+  const Image = styled.img`
+    width: 100%;
+    max-height: 420px;
+    object-fit: cover;
+    border-radius: ${({ theme }) => theme.radius.md};
+    border: 1px solid ${({ theme }) => theme.colors.border};
+    background: #fff;
+  `
+
+  const MetaRow = styled.div`
+    display: flex;
+    flex-wrap: wrap;
+    gap: ${({ theme }) => theme.spacing(2)};
+    color: ${({ theme }) => theme.colors.muted};
+  `
+
+  const HostCard = styled.div`
+    display: grid;
+    gap: ${({ theme }) => theme.spacing(2)};
+    padding: ${({ theme }) => theme.spacing(4)};
+    border: 1px solid ${({ theme }) => theme.colors.border};
+    border-radius: ${({ theme }) => theme.radius.md};
+    background: #fff;
+  `
+
+  const HostHeader = styled.div`
+    display: flex;
+    align-items: center;
+    gap: ${({ theme }) => theme.spacing(2)};
+  `
+
+  const HostAvatar = styled.img`
+    width: 44px;
+    height: 44px;
+    border-radius: 9999px;
+    object-fit: cover;
+    border: 1px solid ${({ theme }) => theme.colors.border};
+    background: #fff;
+  `
 
   useEffect(() => {
     const load = async () => {
@@ -70,69 +121,181 @@ export default function AccommodationDetail() {
     }
   }
 
-  if (loading) return <div style={{ padding: 16 }}>Cargando…</div>
-  if (!acc) return <div style={{ padding: 16 }}>No encontrado</div>
+  if (loading) return <Container>Cargando…</Container>
+  if (!acc) return <Container>No encontrado</Container>
 
   return (
-    <div style={{ padding: 16 }}>
-      <h2>{acc.title}</h2>
-      <div>{acc.location} · ${Number(acc.price)} · Máx {acc.max_guests} huéspedes</div>
-      {acc.image_url && <img src={acc.image_url} alt={acc.title} style={{ width: 400, height: 240, objectFit: 'cover' }} />}
-      <p>{acc.description}</p>
-      <p>Tipo: {acc.property_type} · Instant Book: {acc.instant_book ? 'Sí' : 'No'}</p>
-      {Array.isArray(acc.amenities) && acc.amenities.length > 0 && (
-        <p>Servicios: {acc.amenities.join(', ')}</p>
-      )}
-      <h3>Reservar</h3>
-      <div style={{ display: 'flex', gap: 8 }}>
-        <input type="date" value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} />
-        <input type="date" value={form.end_date} onChange={(e) => setForm({ ...form, end_date: e.target.value })} />
-        <input type="number" min={1} value={form.guests} onChange={(e) => setForm({ ...form, guests: Number(e.target.value) })} />
-        <button onClick={book} disabled={!form.start_date || !form.end_date}>Solicitar/Reservar</button>
-      </div>
-      {bookingStatus && <p>{bookingStatus}</p>}
+    <Container>
+      <Card>
+        <CardHeader>
+          <CardTitle>{acc.title}</CardTitle>
+          <CardDescription>
+            <MetaRow>
+              <span>{acc.location || '-'}</span>
+              <span>· ${Number(acc.price) || 0}</span>
+              <span>· Máx {acc.max_guests || 1} huéspedes</span>
+              {acc.instant_book && (
+                <span>
+                  <Badge $variant="success" $compact>Reserva instantánea</Badge>
+                </span>
+              )}
+            </MetaRow>
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {acc.image_url && (
+            <Image src={acc.image_url} alt={acc.title} />
+          )}
+          {acc.description && (
+            <p>{acc.description}</p>
+          )}
+          <MetaRow>
+            <span>Tipo: {acc.property_type || '-'}</span>
+            {Array.isArray(acc.amenities) && acc.amenities.length > 0 && (
+              <span>Servicios: {acc.amenities.join(', ')}</span>
+            )}
+          </MetaRow>
+        </CardContent>
+        <CardFooter>
+          <Heading as="h3" level={3}>Reservar</Heading>
+        </CardFooter>
+      </Card>
 
-      <h3>Disponibilidad diaria</h3>
-      {!form.start_date || !form.end_date ? (
-        <p>Selecciona un rango de fechas para ver disponibilidad.</p>
-      ) : availStatus && availStatus !== 'ok' ? (
-        <p>{availStatus}</p>
-      ) : availability.length === 0 ? (
-        <p>No hay disponibilidad configurada para este rango.</p>
-      ) : (
-        <div style={{ marginTop: 8 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '160px 100px 100px 120px', gap: 6, fontWeight: 'bold', paddingBottom: 6, borderBottom: '1px solid #ddd' }}>
-            <div>Fecha</div>
-            <div>Capacidad</div>
-            <div>Reservado</div>
-            <div>Disponible</div>
-          </div>
-          {availability.map((a, idx) => {
-            const dateStr = new Date(a.date).toLocaleDateString()
-            const available = (a.capacity ?? 0) - (a.reserved ?? 0)
-            const enough = available >= (form.guests || 1)
-            return (
-              <div key={idx} style={{ display: 'grid', gridTemplateColumns: '160px 100px 100px 120px', gap: 6, padding: '6px 0', borderBottom: '1px solid #f0f0f0', color: enough ? '#222' : '#b00020' }}>
-                <div>{dateStr}</div>
-                <div>{a.capacity}</div>
-                <div>{a.reserved}</div>
-                <div>{available} {enough ? '' : '(insuficiente)'}</div>
-              </div>
+      <Card aria-label="Reserva">
+        <CardContent>
+          <PillGroup cols={3}>
+            <PillCell>
+              <FieldLabel>Entrada</FieldLabel>
+              <FieldRow>
+                <Input $bare type="date" value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} />
+                <RightIcon aria-hidden="true"><CalendarIcon /></RightIcon>
+              </FieldRow>
+            </PillCell>
+            <PillCell>
+              <FieldLabel>Salida</FieldLabel>
+              <FieldRow>
+                <Input $bare type="date" value={form.end_date} onChange={(e) => setForm({ ...form, end_date: e.target.value })} />
+                <RightIcon aria-hidden="true"><CalendarIcon /></RightIcon>
+              </FieldRow>
+            </PillCell>
+            <PillCell>
+              <FieldLabel>Huéspedes</FieldLabel>
+              <FieldRow>
+                <Input $bare type="number" min={1} value={form.guests} onChange={(e) => setForm({ ...form, guests: Number(e.target.value) })} />
+              </FieldRow>
+            </PillCell>
+          </PillGroup>
+          {bookingStatus && <FormMessage tone={bookingStatus === 'loading' ? 'muted' : (bookingStatus?.toLowerCase().includes('error') ? 'error' : 'success')}>{bookingStatus === 'loading' ? 'Procesando…' : bookingStatus}</FormMessage>}
+        </CardContent>
+        <CardFooter>
+          <Button $variant="primary" onClick={book} disabled={!form.start_date || !form.end_date}>Solicitar/Reservar</Button>
+        </CardFooter>
+      </Card>
+
+      <Card aria-label="Disponibilidad">
+        <CardHeader>
+          <CardTitle>Disponibilidad diaria</CardTitle>
+          {!form.start_date || !form.end_date ? (
+            <CardDescription>Selecciona un rango de fechas para ver disponibilidad.</CardDescription>
+          ) : null}
+        </CardHeader>
+        <CardContent>
+          {form.start_date && form.end_date && (
+            availStatus && availStatus !== 'ok' ? (
+              <FormMessage tone="error">{availStatus}</FormMessage>
+            ) : availability.length === 0 ? (
+              <FormMessage>No hay disponibilidad configurada para este rango.</FormMessage>
+            ) : (
+              <Table>
+                <TableHeader cols="160px 1fr 1fr 1fr">
+                  <TableCell>Fecha</TableCell>
+                  <TableCell>Capacidad</TableCell>
+                  <TableCell>Reservado</TableCell>
+                  <TableCell>Disponible</TableCell>
+                </TableHeader>
+                {availability.map((a, idx) => {
+                  const dateStr = new Date(a.date).toLocaleDateString()
+                  const available = (a.capacity ?? 0) - (a.reserved ?? 0)
+                  const enough = available >= (form.guests || 1)
+                  return (
+                    <div key={idx}>
+                      <TableRow cols="160px 1fr 1fr 1fr">
+                        <TableCell>{dateStr}</TableCell>
+                        <TableCell>{a.capacity}</TableCell>
+                        <TableCell>{a.reserved}</TableCell>
+                        <TableCell>
+                          {available} {enough ? (
+                            <span style={{ marginLeft: 6 }}><Badge $variant="success" $compact>ok</Badge></span>
+                          ) : (
+                            <span style={{ marginLeft: 6 }}><Badge $variant="warn" $compact>insuficiente</Badge></span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    </div>
+                  )
+                })}
+              </Table>
             )
-          })}
-        </div>
-      )}
+          )}
+        </CardContent>
+      </Card>
 
-      <h3>Reseñas</h3>
-      {reviews.length === 0 ? <p>Sin reseñas aún</p> : (
-        <ul>
-          {reviews.map((r, idx) => (
-            <li key={idx}>
-              Huésped: {r.guest_rating ?? '-'} {r.guest_comment ?? ''} | Anfitrión: {r.host_rating ?? '-'} {r.host_comment ?? ''}
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+      <Card aria-label="Reseñas">
+        <CardHeader>
+          <CardTitle>Reseñas</CardTitle>
+          <CardDescription>Opiniones de huéspedes y anfitriones.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {reviews.length === 0 ? (
+            <FormMessage>Sin reseñas aún</FormMessage>
+          ) : (
+            <div style={{ display: 'grid', gap: 8 }}>
+              {reviews.map((r, idx) => (
+                <div key={idx} style={{ display: 'grid', gap: 6 }}>
+                  <div>
+                    <Badge $variant="secondary" $compact>Huésped</Badge> {r.guest_rating ?? '-'} {r.guest_comment ?? ''}
+                  </div>
+                  <div>
+                    <Badge $variant="secondary" $compact>Anfitrión</Badge> {r.host_rating ?? '-'} {r.host_comment ?? ''}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card aria-label="Anfitrión">
+        <CardHeader>
+          <CardTitle>Conoce a tu anfitrión</CardTitle>
+          <CardDescription>Información del anfitrión para tu tranquilidad.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {acc?.host ? (
+            <HostCard>
+              <HostHeader>
+                <HostAvatar src={acc.host.avatar_url || '/icons/icon-192.png'} alt={acc.host.name || 'Anfitrión'} />
+                <div>
+                  <strong>{acc.host.name || 'Anfitrión'}</strong>
+                  <div style={{ color: '#6b7280' }}>{acc.host.city || '-'}</div>
+                </div>
+              </HostHeader>
+              <MetaRow>
+                {acc.host.superhost && <Badge $variant="success" $compact>Superanfitrión</Badge>}
+                {Number(acc.host.years_experience) > 0 && <span>{acc.host.years_experience} años de experiencia</span>}
+                {Array.isArray(acc.host.languages) && acc.host.languages.length > 0 && <span>Idiomas: {acc.host.languages.join(', ')}</span>}
+              </MetaRow>
+              {acc.host.bio && <p>{acc.host.bio}</p>}
+              <MetaRow>
+                {Number(acc.host.response_rate) >= 0 && <span>Tasa de respuesta: {acc.host.response_rate}%</span>}
+                {acc.host.response_time && <span>Tiempo de respuesta: {acc.host.response_time}</span>}
+              </MetaRow>
+            </HostCard>
+          ) : (
+            <FormMessage>El anfitrión aún no ha configurado su información. Puedes revisar su perfil y reseñas más abajo.</FormMessage>
+          )}
+        </CardContent>
+      </Card>
+    </Container>
   )
 }

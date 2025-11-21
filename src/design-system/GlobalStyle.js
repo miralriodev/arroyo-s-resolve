@@ -11,6 +11,7 @@ export const GlobalStyle = createGlobalStyle`
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-  a { color: ${({ theme }) => theme.colors.secondary}; text-decoration: none; }
+  a { color: ${({ theme }) => theme.colors.text}; text-decoration: none; }
+  a:hover, a:focus { text-decoration: underline; text-underline-offset: 3px; }
   img { display: block; max-width: 100%; }
 `

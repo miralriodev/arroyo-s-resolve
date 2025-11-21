@@ -1,19 +1,19 @@
-import { useEffect, useState } from 'react'
-import { useAuth } from '../supabase/AuthContext'
-import { listMyBookingsWithMeta, getContact } from '../api/bookings'
-import Container from '../components/atoms/Container'
-import Toolbar from '../components/atoms/Toolbar'
-import Button from '../components/atoms/Button'
-import Heading from '../components/atoms/Heading'
-import Paragraph from '../components/atoms/Paragraph'
-import Input from '../components/atoms/Input'
-import Label from '../components/atoms/Label'
-import Select from '../components/atoms/Select'
-import { FieldPill, FieldLabel, FieldRow, RightIcon } from '../components/molecules/PillFields'
 import { ChevronDownIcon } from '@radix-ui/react-icons'
-import { Card, CardHeader, CardTitle, CardContent } from '../components/atoms/Card'
-import { Table, TableHeader, TableRow, TableCell } from '../components/atoms/Table'
+import { useEffect, useState } from 'react'
+import { getContact, listMyBookingsWithMeta } from '../api/bookings'
 import Badge from '../components/atoms/Badge'
+import Button from '../components/atoms/Button'
+import { Card, CardContent } from '../components/atoms/Card'
+import Container from '../components/atoms/Container'
+import Heading from '../components/atoms/Heading'
+import Input from '../components/atoms/Input'
+import Select from '../components/atoms/Select'
+import { Table, TableCell, TableHeader, TableRow } from '../components/atoms/Table'
+import Toolbar from '../components/atoms/Toolbar'
+import { FieldLabel, FieldPill, FieldRow, RightIcon } from '../components/molecules/PillFields'
+import styled from 'styled-components'
+import BookingCard from '../components/molecules/BookingCard'
+import { useAuth } from '../supabase/AuthContext'
 
 export default function MyBookings() {
   const { session } = useAuth()
@@ -72,14 +72,35 @@ export default function MyBookings() {
   if (loading) return <div style={{ padding: 16 }}>Cargando…</div>
   if (error) return <div style={{ padding: 16 }}>{error}</div>
 
+  const CardsList = styled.div`
+    display: none;
+    @media (max-width: ${({ theme }) => theme.breakpoints.md}) {
+      display: grid;
+      gap: ${({ theme }) => theme.spacing(4)};
+    }
+  `
+
+  const DesktopOnly = styled.div`
+    display: block;
+    @media (max-width: ${({ theme }) => theme.breakpoints.md}) {
+      display: none;
+    }
+  `
+
+  const ContactCard = styled.div`
+    margin-top: 6px;
+    padding: 8px;
+    background: #fff;
+    border: 1px solid ${({ theme }) => theme.colors.border};
+    border-radius: ${({ theme }) => theme.radius.sm};
+    color: ${({ theme }) => theme.colors.text};
+  `
+
   return (
     <Container>
       <Heading as="h2" level={2}>Mis reservas</Heading>
-      <Paragraph>Consulta el estado y detalles de tus reservas.</Paragraph>
+      
       <Card>
-        <CardHeader>
-          <CardTitle>Mis Reservas</CardTitle>
-        </CardHeader>
         <CardContent>
         <Toolbar style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
           <FieldPill>
@@ -110,13 +131,27 @@ export default function MyBookings() {
             </FieldRow>
           </FieldPill>
           {Number.isFinite(total) && (
-            <span style={{ alignSelf: 'center', color: '#666' }}>Total: {total}</span>
+            <span style={{ alignSelf: 'center', color: '#6b7280' }}>Total: {total}</span>
           )}
         </Toolbar>
       {items.length === 0 ? (
         <p>No tienes reservas aún.</p>
       ) : (
         <div>
+          <Heading as="h3" level={3}>Próximas reservas</Heading>
+          <CardsList>
+            {items.map((b) => (
+              <BookingCard
+                key={b.id}
+                booking={b}
+                contact={contacts[b.id]}
+                onShowContact={loadContact}
+                onHideContact={hideContact}
+                contactLoading={contactLoading}
+              />
+            ))}
+          </CardsList>
+          <DesktopOnly>
           <Table>
             <TableHeader cols="120px 1fr 160px 120px 120px 140px">
               <TableCell>Estado</TableCell>
@@ -162,9 +197,9 @@ export default function MyBookings() {
                   <TableCell>
                     {b.status === 'confirmed' ? (
                       contact ? (
-                        <Button title="Oculta datos de contacto" onClick={() => hideContact(b.id)}>Ocultar contacto</Button>
+                        <Button $variant="outline" title="Oculta datos de contacto" onClick={() => hideContact(b.id)}>Ocultar contacto</Button>
                       ) : (
-                        <Button title="Muestra datos de contacto" onClick={() => loadContact(b.id)} disabled={contactLoading === b.id}>
+                        <Button $variant="outline" title="Muestra datos de contacto" onClick={() => loadContact(b.id)} disabled={contactLoading === b.id}>
                           {contactLoading === b.id ? 'Cargando…' : 'Ver contacto'}
                         </Button>
                       )
@@ -174,12 +209,12 @@ export default function MyBookings() {
                   </TableCell>
                 </TableRow>
                 {contact && !contact.error && (
-                  <div style={{ marginTop: 6, marginLeft: 8, color: '#222' }}>
+                  <ContactCard>
                     <div style={{ fontWeight: 'bold' }}>Anfitrión</div>
                     <div>Nombre: {contact.host?.name ?? '-'}</div>
                     <div>Teléfono: {contact.host?.phone ?? '-'}</div>
                     <div>Email: {contact.host?.email ?? '-'}</div>
-                  </div>
+                  </ContactCard>
                 )}
                 {contact && contact.error && (
                   <div style={{ marginTop: 6, marginLeft: 8, color: '#b00020' }}>{contact.error}</div>
@@ -188,9 +223,10 @@ export default function MyBookings() {
             )
           })}
           </Table>
+          </DesktopOnly>
           <Toolbar>
-            <Button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}>Anterior</Button>
-            <Button onClick={() => setPage(p => p + 1)} disabled={Number.isFinite(total) ? (page * pageSize >= total) : items.length < pageSize}>Siguiente</Button>
+            <Button $variant="outline" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}>Anterior</Button>
+            <Button $variant="outline" onClick={() => setPage(p => p + 1)} disabled={Number.isFinite(total) ? (page * pageSize >= total) : items.length < pageSize}>Siguiente</Button>
           </Toolbar>
         </div>
       )}

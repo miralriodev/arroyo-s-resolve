@@ -10,14 +10,14 @@ const Textarea = styled.textarea`
   resize: vertical;
   color: ${({ theme }) => theme.colors.text};
   font-size: 0.95rem;
-  box-shadow: ${({ theme }) => theme.shadow.sm};
+  box-shadow: none;
   ::placeholder {
     color: ${({ theme }) => theme.colors.muted};
   }
   &:focus {
     outline: none;
-    border-color: ${({ theme }) => theme.colors.secondary};
-    box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.15);
+    border-color: ${({ theme }) => theme.colors.border};
+    box-shadow: 0 0 0 3px rgba(0,0,0,0.06);
   }
 `
 

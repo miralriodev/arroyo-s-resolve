@@ -49,6 +49,11 @@ export default function Admin() {
   const [total, setTotal] = useState(null)
   const [expandedBookingId, setExpandedBookingId] = useState(null)
   const [editBooking, setEditBooking] = useState({})
+  const [bkSortBy, setBkSortBy] = useState('start_date')
+  const [bkSortDir, setBkSortDir] = useState('asc')
+  const [bkQ, setBkQ] = useState('')
+  const [bkStart, setBkStart] = useState('')
+  const [bkEnd, setBkEnd] = useState('')
 
   // Users admin panel
   const [users, setUsers] = useState([])
@@ -59,6 +64,135 @@ export default function Admin() {
   const [usersTotal, setUsersTotal] = useState(null)
   const [usersQ, setUsersQ] = useState('')
   const [usersRole, setUsersRole] = useState('all')
+  const [userSortBy, setUserSortBy] = useState('created_at')
+  const [userSortDir, setUserSortDir] = useState('desc')
+
+  const HeaderButton = styled.button`
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: ${({ theme }) => theme.colors.text};
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0;
+  `
+
+  const toggleBkSort = (field) => {
+    setBkSortBy(field)
+    setBkSortDir(prev => (bkSortBy === field ? (prev === 'asc' ? 'desc' : 'asc') : 'asc'))
+  }
+  const renderBkSort = (field) => {
+    if (bkSortBy !== field) return ''
+    return bkSortDir === 'asc' ? '↑' : '↓'
+  }
+  const sortedBookings = () => {
+    const dir = bkSortDir === 'asc' ? 1 : -1
+    const order = { pending: 0, confirmed: 1, rejected: 2 }
+    const filtered = bookings.filter(b => {
+      const text = bkQ.trim().toLowerCase()
+      const matchesText = text ? (
+        (b.accommodation?.title || '').toLowerCase().includes(text) ||
+        (b.user?.full_name || b.user?.email || '').toLowerCase().includes(text)
+      ) : true
+      const startOk = bkStart ? (new Date(b.start_date) >= new Date(bkStart)) : true
+      const endOk = bkEnd ? (new Date(b.end_date) <= new Date(bkEnd)) : true
+      return matchesText && startOk && endOk
+    })
+    const cmp = (a, b) => {
+      switch (bkSortBy) {
+        case 'status': return (order[a.status] - order[b.status]) * dir
+        case 'accommodation': {
+          const av = (a.accommodation?.title || '').toLowerCase()
+          const bv = (b.accommodation?.title || '').toLowerCase()
+          return av.localeCompare(bv) * dir
+        }
+        case 'user': {
+          const av = (a.user?.full_name || a.user?.email || '').toLowerCase()
+          const bv = (b.user?.full_name || b.user?.email || '').toLowerCase()
+          return av.localeCompare(bv) * dir
+        }
+        case 'start_date': return (new Date(a.start_date) - new Date(b.start_date)) * dir
+        case 'amount': return ((Number(a.amount) || 0) - (Number(b.amount) || 0)) * dir
+        default: return 0
+      }
+    }
+    return [...filtered].sort(cmp)
+  }
+
+  const toggleUserSort = (field) => {
+    setUserSortBy(field)
+    setUserSortDir(prev => (userSortBy === field ? (prev === 'asc' ? 'desc' : 'asc') : 'asc'))
+  }
+  const renderUserSort = (field) => {
+    if (userSortBy !== field) return ''
+    return userSortDir === 'asc' ? '↑' : '↓'
+  }
+  const sortedUsers = () => {
+    const dir = userSortDir === 'asc' ? 1 : -1
+    const cmp = (a, b) => {
+      switch (userSortBy) {
+        case 'email': return ((a.user?.email || '').toLowerCase()).localeCompare((b.user?.email || '').toLowerCase()) * dir
+        case 'full_name': return ((a.full_name || '').toLowerCase()).localeCompare((b.full_name || '').toLowerCase()) * dir
+        case 'created_at': return ((new Date(a.created_at)).getTime() - (new Date(b.created_at)).getTime()) * dir
+        default: return 0
+      }
+    }
+    return [...users].sort(cmp)
+  }
+
+  function exportAdminBookingsCSV() {
+    const rows = sortedBookings()
+    const cols = [
+      { label: 'Estado', get: (r) => r.status },
+      { label: 'Alojamiento', get: (r) => r.accommodation?.title || '' },
+      { label: 'Huésped', get: (r) => r.user?.full_name || r.user?.email || '' },
+      { label: 'Inicio', get: (r) => String(r.start_date).slice(0,10) },
+      { label: 'Fin', get: (r) => String(r.end_date).slice(0,10) },
+      { label: 'Monto', get: (r) => r.amount },
+      { label: 'Pago', get: (r) => r.payment_confirmed_by_host ? 'Pagado' : 'Pendiente' },
+    ]
+    const header = cols.map(c => c.label).join(',')
+    const body = rows.map(r => cols.map(c => {
+      const v = c.get(r)
+      const s = v == null ? '' : String(v).replace(/"/g, '""')
+      return `"${s}"`
+    }).join(',')).join('\n')
+    const csv = header + '\n' + body
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'reservas-admin.csv'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function exportAdminUsersCSV() {
+    const rows = sortedUsers()
+    const cols = [
+      { label: 'Email', get: (r) => r.user?.email || '' },
+      { label: 'Nombre', get: (r) => r.full_name || '' },
+      { label: 'Creado', get: (r) => r.created_at ? String(r.created_at).slice(0,10) : '' },
+      { label: 'Rol', get: (r) => r.role || '' },
+    ]
+    const header = cols.map(c => c.label).join(',')
+    const body = rows.map(r => cols.map(c => {
+      const v = c.get(r)
+      const s = v == null ? '' : String(v).replace(/"/g, '""')
+      return `"${s}"`
+    }).join(',')).join('\n')
+    const csv = header + '\n' + body
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'usuarios-admin.csv'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
 
   const load = async () => {
     setLoading(true)
@@ -236,6 +370,29 @@ export default function Admin() {
               <RightIcon aria-hidden="true"><ChevronDownIcon /></RightIcon>
             </FieldRow>
           </FieldPill>
+          <FieldPill>
+            <FieldLabel>Buscar</FieldLabel>
+            <Input $bare placeholder="Alojamiento o huésped" value={bkQ} onChange={(e) => { setBkQ(e.target.value); setPage(1) }} />
+          </FieldPill>
+          <FieldPill>
+            <FieldLabel>Inicio</FieldLabel>
+            <Input $bare type="date" value={bkStart} onChange={(e) => { setBkStart(e.target.value); setPage(1) }} />
+          </FieldPill>
+          <FieldPill>
+            <FieldLabel>Fin</FieldLabel>
+            <Input $bare type="date" value={bkEnd} onChange={(e) => { setBkEnd(e.target.value); setPage(1) }} />
+          </FieldPill>
+          <FieldPill>
+            <FieldLabel>Tamaño</FieldLabel>
+            <FieldRow>
+              <Select $bare value={pageSize} onChange={(e) => { setPage(1); setPageSize(Number(e.target.value)) }}>
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+              </Select>
+              <RightIcon aria-hidden="true"><ChevronDownIcon /></RightIcon>
+            </FieldRow>
+          </FieldPill>
         </Toolbar>
         {bookingsLoading && <p>Cargando reservas…</p>}
         {bookingsError && <ErrorText>{bookingsError}</ErrorText>}
@@ -245,20 +402,20 @@ export default function Admin() {
           ) : (
             <div>
               <Table>
-                <TableHeader cols="120px 1fr 160px 160px 140px 200px">
-                  <TableCell>Estado</TableCell>
-                  <TableCell>Alojamiento</TableCell>
-                  <TableCell>Huésped</TableCell>
-                  <TableCell>Fechas</TableCell>
-                  <TableCell>Pago</TableCell>
+                <TableHeader $sticky cols="120px 1fr 160px 160px 140px 200px">
+                  <TableCell><HeaderButton onClick={() => toggleBkSort('status')}>Estado {renderBkSort('status')}</HeaderButton></TableCell>
+                  <TableCell><HeaderButton onClick={() => toggleBkSort('accommodation')}>Alojamiento {renderBkSort('accommodation')}</HeaderButton></TableCell>
+                  <TableCell><HeaderButton onClick={() => toggleBkSort('user')}>Huésped {renderBkSort('user')}</HeaderButton></TableCell>
+                  <TableCell><HeaderButton onClick={() => toggleBkSort('start_date')}>Fechas {renderBkSort('start_date')}</HeaderButton></TableCell>
+                  <TableCell><HeaderButton onClick={() => toggleBkSort('amount')}>Pago {renderBkSort('amount')}</HeaderButton></TableCell>
                   <TableCell>Acciones</TableCell>
                 </TableHeader>
-                {bookings.map((b) => {
+                {sortedBookings().map((b, idx) => {
                   const start = new Date(b.start_date).toLocaleDateString()
                   const end = new Date(b.end_date).toLocaleDateString()
                   return (
                     <div key={b.id}>
-                      <TableRow cols="120px 1fr 160px 160px 140px 200px">
+                      <TableRow $odd={idx % 2 === 1} cols="120px 1fr 160px 160px 140px 200px">
                         <TableCell>
                         <FieldRow>
                           <Select defaultValue={b.status} onChange={(e) => setEditBooking(prev => ({ ...prev, [b.id]: { ...(prev[b.id] || {}), status: e.target.value } }))}>
@@ -352,6 +509,7 @@ export default function Admin() {
               })}
               </Table>
               <Toolbar>
+                <Button onClick={() => exportAdminBookingsCSV()}>Exportar CSV</Button>
                 <Button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}>Anterior</Button>
                 <Button onClick={() => setPage(p => p + 1)} disabled={Number.isFinite(total) ? (page * pageSize >= total) : bookings.length < pageSize}>Siguiente</Button>
               </Toolbar>
@@ -385,6 +543,12 @@ export default function Admin() {
             </FieldRow>
           </FieldPill>
         </Toolbar>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <Badge $variant="secondary" $compact>Visitantes: {users.filter(u => u.role === 'visitor').length}</Badge>
+          <Badge $variant="secondary" $compact>Anfitriones: {users.filter(u => u.role === 'host').length}</Badge>
+          <Badge $variant="secondary" $compact>Admins: {users.filter(u => u.role === 'admin').length}</Badge>
+          <Button onClick={() => exportAdminUsersCSV()}>Exportar CSV</Button>
+        </div>
         {usersLoading && <p>Cargando usuarios…</p>}
         {usersError && <ErrorText>{usersError}</ErrorText>}
         {!usersLoading && !usersError && (
@@ -393,15 +557,15 @@ export default function Admin() {
           ) : (
             <div>
               <Table>
-                <TableHeader cols="220px 1fr 160px 140px">
-                  <TableCell>Email</TableCell>
-                  <TableCell>Nombre</TableCell>
-                  <TableCell>Creado</TableCell>
+                <TableHeader $sticky cols="220px 1fr 160px 140px">
+                  <TableCell><HeaderButton onClick={() => toggleUserSort('email')}>Email {renderUserSort('email')}</HeaderButton></TableCell>
+                  <TableCell><HeaderButton onClick={() => toggleUserSort('full_name')}>Nombre {renderUserSort('full_name')}</HeaderButton></TableCell>
+                  <TableCell><HeaderButton onClick={() => toggleUserSort('created_at')}>Creado {renderUserSort('created_at')}</HeaderButton></TableCell>
                   <TableCell>Rol</TableCell>
                 </TableHeader>
-                {users.map(u => (
+                {sortedUsers().map((u, idx) => (
                   <div key={u.id}>
-                    <TableRow cols="220px 1fr 160px 140px">
+                    <TableRow $odd={idx % 2 === 1} cols="220px 1fr 160px 140px">
                       <TableCell>{u.user?.email || '-'}</TableCell>
                       <TableCell>{u.full_name || '-'}</TableCell>
                       <TableCell>{u.created_at ? new Date(u.created_at).toLocaleDateString() : '-'}</TableCell>

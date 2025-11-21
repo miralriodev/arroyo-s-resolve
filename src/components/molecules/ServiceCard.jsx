@@ -5,12 +5,13 @@ const Card = styled.article`
   background: #fff;
   border: 1px solid transparent;
   border-radius: ${({ theme }) => theme.radius.lg};
-  box-shadow: ${({ theme }) => theme.shadow.md};
+  box-shadow: ${({ theme }) => theme.shadow.sm};
   overflow: hidden;
-  transition: transform 140ms ease, box-shadow 140ms ease;
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: ${({ theme }) => theme.shadow.lg};
+    transform: translateY(-1px);
+    box-shadow: ${({ theme }) => theme.shadow.md};
+    border-color: ${({ theme }) => theme.colors.border};
   }
 `
 
