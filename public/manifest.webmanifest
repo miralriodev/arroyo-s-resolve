@@ -12,22 +12,16 @@
   "categories": ["travel", "lifestyle", "utilities"],
   "icons": [
     {
-      "src": "/icons/icon-192.png",
+      "src": "/cabin-logo.webp",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icons/icon-512.png",
+      "src": "/cabin-logo.webp",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
-    },
-    {
-      "src": "/vite.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
     }
   ]
 }

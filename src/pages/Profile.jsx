@@ -1,17 +1,18 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import styled from 'styled-components'
-import { useAuth } from '../supabase/AuthContext'
-import { listMyBookingsWithMeta } from '../api/bookings'
 import { syncProfile as syncProfileRequest } from '../api/auth'
-import Container from '../components/atoms/Container'
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../components/atoms/Card'
-import Input from '../components/atoms/Input'
-import Textarea from '../components/atoms/Textarea'
-import Label from '../components/atoms/Label'
-import Button from '../components/atoms/Button'
-import FormMessage from '../components/atoms/FormMessage'
-import { Table, TableHeader, TableRow, TableCell } from '../components/atoms/Table'
+import { listMyBookingsWithMeta } from '../api/bookings'
 import Badge from '../components/atoms/Badge'
+import Button from '../components/atoms/Button'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../components/atoms/Card'
+import Container from '../components/atoms/Container'
+import FormMessage from '../components/atoms/FormMessage'
+import Input from '../components/atoms/Input'
+import Label from '../components/atoms/Label'
+import { Table, TableCell, TableHeader, TableRow } from '../components/atoms/Table'
+import Textarea from '../components/atoms/Textarea'
+import { useAuth } from '../supabase/AuthContext'
+import { supabase } from '../supabase/supabase.config.jsx'
 
 const Wrapper = styled.div`
   display: grid;
@@ -37,6 +38,63 @@ const InfoItem = styled.div`
   }
 `
 
+const MobileHeader = styled.div`
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing(2)};
+  padding: ${({ theme }) => theme.spacing(3)};
+  @media (min-width: ${({ theme }) => theme.breakpoints.md}) {
+    padding: ${({ theme }) => theme.spacing(4)};
+  }
+`
+
+const LocationRow = styled.div`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: ${({ theme }) => theme.colors.text};
+  font-size: 0.9rem;
+`
+
+const AvatarCircle = styled.img`
+  width: 174px;
+  height: 174px;
+  border-radius: 9999px;
+  object-fit: cover;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  background: #fff;
+  justify-self: center;
+`
+
+const Greeting = styled.h2`
+  text-align: center;
+  font-weight: 500;
+  span.primary { color: #4373de; }
+`
+
+const Tile = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 16px;
+  background: ${({ theme }) => theme.colors.surfaceAlt};
+  padding: 12px 16px;
+  color: ${({ theme }) => theme.colors.text};
+  cursor: pointer;
+  text-align: left;
+`
+
+const TileText = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  strong { font-weight: 600; }
+  small { color: #808080; }
+`
+
 export default function Profile() {
   const { user, session } = useAuth()
   const token = session?.access_token
@@ -56,6 +114,8 @@ export default function Profile() {
   })
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState('')
+  const [avatarUploading, setAvatarUploading] = useState(false)
+  const fileRef = useRef(null)
 
   useEffect(() => {
     const load = async () => {
@@ -121,6 +181,33 @@ export default function Profile() {
     }
   }
 
+  const onAvatarPick = () => {
+    fileRef.current?.click()
+  }
+
+  const onAvatarChange = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file || !user?.id) return
+    setAvatarUploading(true)
+    try {
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+      const path = `${user.id}/${Date.now()}.${ext}`
+      const { error: upErr } = await supabase.storage.from('avatars').upload(path, file, { upsert: true })
+      if (upErr) throw upErr
+      const { data } = supabase.storage.from('avatars').getPublicUrl(path)
+      const publicUrl = data?.publicUrl
+      if (!publicUrl) throw new Error('No se obtuvo URL pública')
+      const updated = await syncProfileRequest(token, { avatar_url: publicUrl })
+      setProfile(updated || { ...profile, avatar_url: publicUrl })
+      setSaveMsg('Avatar actualizado')
+    } catch (err) {
+      setSaveMsg(err?.message || 'No se pudo subir el avatar')
+    } finally {
+      setAvatarUploading(false)
+      e.target.value = ''
+    }
+  }
+
   return (
     <Container>
       <Wrapper>
@@ -129,6 +216,46 @@ export default function Profile() {
             <CardTitle>Perfil</CardTitle>
           </CardHeader>
           <CardContent>
+            <div style={{ display: 'grid', gap: 18, justifyItems: 'center', padding: '8px 0' }}>
+              <AvatarCircle src={profile?.avatar_url || '/icons/icon-192.png'} alt="Avatar grande" onClick={onAvatarPick} style={{ cursor: 'pointer' }} />
+              <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={onAvatarChange} />
+              <Greeting>
+                <span className="primary">Hola,</span> {user?.user_metadata?.full_name || user?.email || 'Usuario'}
+              </Greeting>
+              <div style={{ display: 'grid', gap: 12, width: '100%', maxWidth: 520 }}>
+                <Tile onClick={() => {}} disabled>
+                  <svg width="33" height="33" viewBox="0 0 24 24" fill="none" stroke="#4373de" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-3-3.87"/><path d="M4 21v-2a4 4 0 0 1 3-3.87"/><circle cx="12" cy="7" r="4"/></svg>
+                  <TileText>
+                    <strong>{user?.user_metadata?.full_name || 'Nombre'}</strong>
+                    <small>Edita tu nombre o apellido</small>
+                  </TileText>
+                </Tile>
+                <Tile onClick={() => {}} disabled>
+                  <svg width="33" height="33" viewBox="0 0 24 24" fill="none" stroke="#4373de" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16v16H4z"/><path d="M22 7l-10 7L2 7"/></svg>
+                  <TileText>
+                    <strong>{user?.email || '-'}</strong>
+                    <small>Actualiza tu correo electrónico</small>
+                  </TileText>
+                </Tile>
+                <Tile onClick={() => {}} disabled>
+                  <svg width="33" height="33" viewBox="0 0 24 24" fill="none" stroke="#4373de" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                  <TileText>
+                    <strong>Verifica tu cuenta</strong>
+                    <small>Valida los datos de tu cuenta</small>
+                  </TileText>
+                </Tile>
+                <Tile onClick={() => {}} disabled>
+                  <svg width="33" height="33" viewBox="0 0 24 24" fill="none" stroke="#4373de" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 11l18-9-9 18-2-8-7-1z"/></svg>
+                  <TileText>
+                    <strong>Actualiza tu contraseña</strong>
+                    <small>Cambia la contraseña de tu cuenta</small>
+                  </TileText>
+                </Tile>
+                <div style={{ textAlign: 'center' }}>
+                  <Button onClick={onAvatarPick} disabled={avatarUploading}>{avatarUploading ? 'Subiendo…' : 'Cambiar foto'}</Button>
+                </div>
+              </div>
+            </div>
             <InfoGrid>
               <InfoItem>
                 <strong>Email</strong>
