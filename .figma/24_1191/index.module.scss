@@ -1,0 +1,436 @@
+* {
+  box-sizing: border-box;
+}
+
+.profilePage {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  width: 390px;
+  height: 844px;
+  overflow: hidden;
+
+  .frame121 {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    align-items: center;
+    margin-right: -6px;
+    margin-left: -6px;
+    row-gap: 13px;
+
+    .frame {
+      display: flex;
+      flex-shrink: 0;
+      align-items: flex-start;
+      align-self: stretch;
+      justify-content: space-between;
+      background: var(--Backgrounds-Primary, #ffffff);
+      padding-top: 21px;
+      padding-bottom: 7px;
+
+      .time {
+        padding: 0px 6px 0px 16px;
+        width: 139px;
+        text-align: center;
+        line-height: 22px;
+        letter-spacing: 0;
+        color: var(--Labels-Primary, #000000);
+        font-family: "SF Pro", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+        font-size: 17px;
+        font-weight: 600;
+      }
+
+      .levels {
+        margin-top: 5px;
+        width: 139px;
+        height: 13px;
+      }
+    }
+
+    .frame120 {
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      align-items: center;
+      align-self: stretch;
+      margin-right: 6px;
+      margin-left: 6px;
+      row-gap: 42px;
+
+      .mdiLocation {
+        flex-shrink: 0;
+        width: 24px;
+        height: 24px;
+        overflow: hidden;
+      }
+
+      .header {
+        display: flex;
+        flex-shrink: 0;
+        align-items: center;
+        align-self: stretch;
+        justify-content: space-between;
+        margin-right: 31px;
+        margin-left: 31px;
+        min-width: 328px;
+
+        .avPieDeLaCuesta2501 {
+          flex-shrink: 0;
+          line-height: 22px;
+          letter-spacing: 0;
+          color: #000000;
+          font-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+          font-size: 13px;
+        }
+
+        .ellipse6 {
+          flex-shrink: 0;
+          border-radius: 50%;
+          width: 25px;
+          height: 25px;
+        }
+      }
+
+      .frame119 {
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+        align-items: center;
+        align-self: stretch;
+        row-gap: 18px;
+
+        .frame118 {
+          display: flex;
+          flex-direction: column;
+          flex-shrink: 0;
+          align-items: center;
+          align-self: stretch;
+          margin-right: 31px;
+          margin-left: 31px;
+          row-gap: 19px;
+
+          .frame117 {
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            align-items: center;
+            align-self: stretch;
+            row-gap: 42px;
+
+            .frame116 {
+              display: flex;
+              flex-direction: column;
+              flex-shrink: 0;
+              align-items: center;
+              align-self: stretch;
+              margin-right: 52px;
+              margin-left: 52px;
+              row-gap: 42px;
+
+              .ellipse8 {
+                flex-shrink: 0;
+                border-radius: 50%;
+                width: 174px;
+                height: 174px;
+              }
+
+              .holaHugoMiralrio3 {
+                flex-shrink: 0;
+                align-self: stretch;
+                text-align: center;
+                line-height: 22px;
+                letter-spacing: 0;
+                color: #000000;
+                font-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+                font-size: 24px;
+                font-weight: 500;
+
+                .holaHugoMiralrio {
+                  line-height: 22px;
+                  letter-spacing: 0;
+                  color: #4373de;
+                  font-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+                  font-size: 24px;
+                  font-weight: 500;
+                }
+
+                .holaHugoMiralrio2 {
+                  line-height: 22px;
+                  letter-spacing: 0;
+                  color: #000000;
+                  font-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+                  font-size: 24px;
+                  font-weight: 500;
+                }
+              }
+            }
+
+            .frame115 {
+              display: flex;
+              flex-direction: column;
+              flex-shrink: 0;
+              align-items: flex-end;
+              align-self: stretch;
+              row-gap: 11px;
+
+              .hugoMiralrio {
+                flex-shrink: 0;
+                align-self: stretch;
+                line-height: 22px;
+                letter-spacing: 0;
+                color: #000000;
+                font-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+                font-size: 11px;
+                font-weight: 500;
+              }
+
+              .healthiconsUiUserPro {
+                flex-shrink: 0;
+                width: 40px;
+                height: 40px;
+                overflow: hidden;
+              }
+
+              .frame87 {
+                display: inline-flex;
+                flex-shrink: 0;
+                align-items: center;
+                align-self: stretch;
+                column-gap: 17px;
+                border: 1px solid var(--Perfect-stroke, #d3d3d3);
+                border-radius: 16px;
+                background: var(--shadcn-bg-1, #fafafa);
+                padding: 12px 32px 20px;
+
+                .frame86 {
+                  display: flex;
+                  flex-direction: column;
+                  flex-shrink: 0;
+                  align-items: flex-start;
+
+                  .editaTuNombreOApelli {
+                    flex-shrink: 0;
+                    align-self: stretch;
+                    text-align: center;
+                    line-height: 12px;
+                    letter-spacing: 0;
+                    color: var(--Description-gray, #808080);
+                    font-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+                    font-size: 9px;
+                    font-weight: 500;
+                  }
+                }
+              }
+
+              .frame872 {
+                display: inline-flex;
+                flex-shrink: 0;
+                align-items: center;
+                align-self: stretch;
+                column-gap: 17px;
+                border: 1px solid var(--Perfect-stroke, #d3d3d3);
+                border-radius: 16px;
+                background: var(--shadcn-bg-1, #fafafa);
+                padding: 12px 32px 20px;
+
+                .frame862 {
+                  display: flex;
+                  flex-direction: column;
+                  flex-shrink: 0;
+                  align-items: flex-start;
+                  width: 113px;
+
+                  .miralriohugo7GmailCo {
+                    flex-shrink: 0;
+                    width: 141px;
+                    line-height: 22px;
+                    letter-spacing: 0;
+                    color: #000000;
+                    font-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+                    font-size: 11px;
+                    font-weight: 500;
+                  }
+
+                  .actualizaTuCorreoEle {
+                    flex-shrink: 0;
+                    width: 141px;
+                    line-height: 12px;
+                    letter-spacing: 0;
+                    color: var(--Description-gray, #808080);
+                    font-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+                    font-size: 9px;
+                    font-weight: 500;
+                  }
+                }
+              }
+
+              .frame873 {
+                display: inline-flex;
+                flex-shrink: 0;
+                align-items: center;
+                align-self: stretch;
+                column-gap: 17px;
+                border: 1px solid var(--Perfect-stroke, #d3d3d3);
+                border-radius: 16px;
+                background: var(--shadcn-bg-1, #fafafa);
+                padding: 12px 32px 20px;
+
+                .healthiconsUiUserPro2 {
+                  display: flex;
+                  flex-shrink: 0;
+                  align-items: flex-start;
+                  padding: 7px 3px 1px;
+                  overflow: hidden;
+
+                  .mdiAccountCheck {
+                    width: 33px;
+                    height: 33px;
+                    overflow: hidden;
+                  }
+                }
+
+                .frame863 {
+                  display: flex;
+                  flex-direction: column;
+                  flex-shrink: 0;
+                  align-items: flex-start;
+                  width: 113px;
+
+                  .validaLosDatosDeTuCu {
+                    flex-shrink: 0;
+                    width: 163px;
+                    line-height: 12px;
+                    letter-spacing: 0;
+                    color: var(--Description-gray, #808080);
+                    font-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+                    font-size: 9px;
+                    font-weight: 500;
+                  }
+                }
+              }
+
+              .frame874 {
+                display: inline-flex;
+                flex-shrink: 0;
+                align-items: center;
+                align-self: stretch;
+                column-gap: 17px;
+                border: 1px solid var(--Perfect-stroke, #d3d3d3);
+                border-radius: 16px;
+                background: var(--shadcn-bg-1, #fafafa);
+                padding: 12px 32px 20px;
+
+                .frame864 {
+                  display: flex;
+                  flex-direction: column;
+                  flex-shrink: 0;
+                  align-items: flex-start;
+                  width: 113px;
+
+                  .actualizaTuContraseA {
+                    flex-shrink: 0;
+                    width: 142px;
+                    line-height: 22px;
+                    letter-spacing: 0;
+                    color: #000000;
+                    font-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+                    font-size: 11px;
+                    font-weight: 500;
+                  }
+
+                  .cambiaLaContraseADeT {
+                    flex-shrink: 0;
+                    width: 178px;
+                    line-height: 12px;
+                    letter-spacing: 0;
+                    color: var(--Description-gray, #808080);
+                    font-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+                    font-size: 9px;
+                    font-weight: 500;
+                  }
+                }
+              }
+            }
+          }
+
+          .cerrarSesiN {
+            flex-shrink: 0;
+            align-self: stretch;
+            text-align: center;
+            line-height: 22px;
+            letter-spacing: 0;
+            color: #9747ff;
+            font-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+            font-size: 11px;
+            font-weight: 500;
+            text-decoration: underline;
+          }
+        }
+
+        .tabBar {
+          display: flex;
+          flex-shrink: 0;
+          align-items: center;
+          align-self: stretch;
+          justify-content: center;
+          column-gap: 45px;
+          background: var(--Perfect-background, #f3f3f3);
+
+          .searchLi {
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            align-items: center;
+
+            .search {
+              flex-shrink: 0;
+              align-self: stretch;
+              line-height: 22px;
+              letter-spacing: 0;
+              color: #625c5c;
+              font-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+              font-size: 9px;
+            }
+          }
+
+          .favoritesLi {
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            align-items: center;
+
+            .favorites {
+              flex-shrink: 0;
+              align-self: stretch;
+              text-align: center;
+              line-height: 22px;
+              letter-spacing: 0;
+              color: #625c5c;
+              font-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+              font-size: 9px;
+            }
+          }
+
+          .profileLi {
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            align-items: center;
+
+            .profile {
+              flex-shrink: 0;
+              align-self: stretch;
+              text-align: center;
+              line-height: 22px;
+              letter-spacing: 0;
+              color: #000000;
+              font-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+              font-size: 9px;
+            }
+          }
+        }
+      }
+    }
+  }
+}
