@@ -63,7 +63,7 @@ export default function HostDashboard() {
   const [dateEnd, setDateEnd] = useState('')
 
   const toggleSort = (field) => {
-    setSortBy(prev => field)
+    setSortBy(field)
     setSortDir(prev => (prev === 'asc' && field === sortBy ? 'desc' : (field === sortBy ? 'asc' : 'asc')))
   }
 
@@ -235,6 +235,34 @@ export default function HostDashboard() {
     } catch (e) {
       setStatus(e?.message || 'Error actualizando disponibilidad')
     }
+  }
+
+  function exportHostCSV() {
+    const rows = sortedItems()
+    const cols = [
+      { label: 'Estado', get: (r) => r.status },
+      { label: 'Alojamiento', get: (r) => r.accommodation?.title || '' },
+      { label: 'Inicio', get: (r) => String(r.start_date).slice(0,10) },
+      { label: 'Fin', get: (r) => String(r.end_date).slice(0,10) },
+      { label: 'Huéspedes', get: (r) => r.guests },
+      { label: 'Monto', get: (r) => r.amount },
+      { label: 'Huésped', get: (r) => r.user?.full_name || '' },
+      { label: 'Pago', get: (r) => r.payment_confirmed_by_host ? 'Pagado' : 'Pendiente' },
+    ]
+    const header = cols.map(c => c.label).join(',')
+    const body = rows.map(r => cols.map(c => {
+      const v = c.get(r)
+      const s = v == null ? '' : String(v).replace(/"/g, '""')
+      return `"${s}"`
+    }).join(',')).join('\n')
+    const csv = header + '\n' + body
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'reservas-host.csv'
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   return (
@@ -493,31 +521,3 @@ export default function HostDashboard() {
     border-radius: ${({ theme }) => theme.radius.sm};
   color: ${({ theme }) => theme.colors.text};
   `
-
-  function exportHostCSV() {
-    const rows = sortedItems()
-    const cols = [
-      { label: 'Estado', get: (r) => r.status },
-      { label: 'Alojamiento', get: (r) => r.accommodation?.title || '' },
-      { label: 'Inicio', get: (r) => String(r.start_date).slice(0,10) },
-      { label: 'Fin', get: (r) => String(r.end_date).slice(0,10) },
-      { label: 'Huéspedes', get: (r) => r.guests },
-      { label: 'Monto', get: (r) => r.amount },
-      { label: 'Huésped', get: (r) => r.user?.full_name || '' },
-      { label: 'Pago', get: (r) => r.payment_confirmed_by_host ? 'Pagado' : 'Pendiente' },
-    ]
-    const header = cols.map(c => c.label).join(',')
-    const body = rows.map(r => cols.map(c => {
-      const v = c.get(r)
-      const s = v == null ? '' : String(v).replace(/"/g, '""')
-      return `"${s}"`
-    }).join(',')).join('\n')
-    const csv = header + '\n' + body
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'reservas-host.csv'
-    a.click()
-    URL.revokeObjectURL(url)
-  }

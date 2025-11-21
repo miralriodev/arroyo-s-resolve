@@ -218,6 +218,8 @@ export function Navbar() {
   const [avatarUrl, setAvatarUrl] = useState('/icons/icon-192.png')
   const [open, setOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [installPrompt, setInstallPrompt] = useState(null)
+  const [isInstalled, setIsInstalled] = useState(false)
   const ref = useRef(null)
   const drawerRef = useRef(null)
 
@@ -237,12 +239,12 @@ export function Navbar() {
           setProfileName('Invitado')
           setAvatarUrl('/icons/icon-192.png')
         }
-      } catch (_) {
+      } catch {
         if (active) {
           setRole(null)
           setProfileName(user?.email || 'Usuario')
         }
-        console.error('Navbar: no se pudo obtener rol', _)
+        console.error('Navbar: no se pudo obtener rol')
       }
     })()
     return () => { active = false }
@@ -267,18 +269,36 @@ export function Navbar() {
     return () => document.removeEventListener('keydown', onKey)
   }, [])
 
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault()
+      setInstallPrompt(e)
+    }
+    const onInstalled = () => {
+      setIsInstalled(true)
+      setInstallPrompt(null)
+    }
+    setIsInstalled(window.matchMedia('(display-mode: standalone)').matches || Boolean(window.navigator.standalone))
+    window.addEventListener('beforeinstallprompt', handler)
+    window.addEventListener('appinstalled', onInstalled)
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler)
+      window.removeEventListener('appinstalled', onInstalled)
+    }
+  }, [])
+
   // Integración con botón atrás (Android/navegador):
   // cuando se abre sidebar o menú de usuario, insertamos un estado en el historial
   // para que el botón atrás cierre la capa en lugar de navegar.
   useEffect(() => {
     if (sidebarOpen) {
-      try { window.history.pushState({ sidebar: true }, '') } catch (_) {}
+      try { window.history.pushState({ sidebar: true }, '') } catch { console.warn('PushState sidebar failed') }
     }
   }, [sidebarOpen])
 
   useEffect(() => {
     if (open) {
-      try { window.history.pushState({ menu: true }, '') } catch (_) {}
+      try { window.history.pushState({ menu: true }, '') } catch { console.warn('PushState menu failed') }
     }
   }, [open])
 
@@ -367,6 +387,21 @@ export function Navbar() {
                   Rol: {role || 'visitor'}
                 </Badge>
               </MenuRow>
+              {!isInstalled && installPrompt && (
+                <MenuItem
+                  onClick={async () => {
+                    try {
+                      await installPrompt.prompt()
+                      const choice = await installPrompt.userChoice
+                      if (choice && choice.outcome === 'accepted') {
+                        setInstallPrompt(null)
+                      }
+                    } catch { console.warn('Install prompt failed') }
+                  }}
+                >
+                  Instalar app
+                </MenuItem>
+              )}
               {user ? (
                 <>
                   <MenuItem onClick={signOut}>Salir</MenuItem>
