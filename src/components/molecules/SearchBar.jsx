@@ -17,17 +17,17 @@ const ActionCircle = styled.button`
   width: 48px;
   height: 48px;
   border-radius: 9999px;
-  border: none;
-  background: ${({ theme }) => theme.colors.primary};
-  color: #fff;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  background: #fff;
+  color: ${({ theme }) => theme.colors.text};
   font-weight: 600;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: ${({ theme }) => theme.shadow.sm};
+  box-shadow: none;
   cursor: pointer;
-  &:hover { background: ${({ theme }) => theme.colors.primaryDark}; }
-  &:focus { outline: none; box-shadow: 0 0 0 3px rgba(46,125,50,0.2); }
+  &:hover { background: ${({ theme }) => theme.colors.surfaceAlt}; }
+  &:focus { outline: none; box-shadow: 0 0 0 3px rgba(0,0,0,0.06); }
 `
 
 export function SearchBar({ onSearch }) {

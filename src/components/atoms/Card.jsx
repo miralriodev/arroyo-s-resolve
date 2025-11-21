@@ -4,7 +4,7 @@ export const Card = styled.section`
   background: #fff;
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: ${({ theme }) => theme.radius.lg};
-  box-shadow: ${({ theme }) => theme.shadow.md};
+  box-shadow: ${({ theme }) => theme.shadow.sm};
   overflow: hidden;
 `
 

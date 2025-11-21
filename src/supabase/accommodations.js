@@ -4,8 +4,8 @@ import { supabase } from './supabase.config.jsx'
 
 export async function listAccommodations() {
   const { data, error } = await supabase
-    .from('accommodations')
-    .select('id,title,description,price,rating,category,location,image_url')
+    .from('accommodations_with_host')
+    .select('id,title,description,price,rating,property_type,location,image_url,amenities,rules,max_guests,instant_book,address,host')
     .order('created_at', { ascending: false })
   if (error) throw error
   return data || []
@@ -13,8 +13,8 @@ export async function listAccommodations() {
 
 export async function getAccommodation(id) {
   const { data, error } = await supabase
-    .from('accommodations')
-    .select('id,title,description,price,rating,category,location,image_url')
+    .from('accommodations_with_host')
+    .select('id,title,description,price,rating,property_type,location,image_url,amenities,rules,max_guests,instant_book,address,host')
     .eq('id', id)
     .single()
   if (error) throw error

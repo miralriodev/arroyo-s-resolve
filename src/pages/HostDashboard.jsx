@@ -1,28 +1,43 @@
+import { ChevronDownIcon, ChevronUpIcon } from '@radix-ui/react-icons'
 import { useEffect, useState } from 'react'
-import { useAuth } from '../supabase/AuthContext'
+import styled from 'styled-components'
+
+const HeaderButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: ${({ theme }) => theme.colors.text};
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  &:hover { text-decoration: underline; text-underline-offset: 3px; }
+`
 import { createAccommodation, setAvailability } from '../api/accommodations'
-import { listHostBookingsWithMeta, getContact, confirmBooking, rejectBooking, markPaid } from '../api/bookings'
-import Container from '../components/atoms/Container'
-import Toolbar from '../components/atoms/Toolbar'
-import Button from '../components/atoms/Button'
-import Input from '../components/atoms/Input'
-import Textarea from '../components/atoms/Textarea'
-import Label from '../components/atoms/Label'
-import Select from '../components/atoms/Select'
-import { FieldPill, FieldLabel, FieldRow, RightIcon } from '../components/molecules/PillFields'
-import { ChevronDownIcon } from '@radix-ui/react-icons'
-import { Card, CardHeader, CardTitle, CardContent } from '../components/atoms/Card'
-import { Table, TableHeader, TableRow, TableCell, TableActions } from '../components/atoms/Table'
-import Heading from '../components/atoms/Heading'
-import Paragraph from '../components/atoms/Paragraph'
-import FormMessage from '../components/atoms/FormMessage'
-import IconCheck from '../components/atoms/IconCheck'
-import IconX from '../components/atoms/IconX'
-import IconMoney from '../components/atoms/IconMoney'
+import { confirmBooking, getContact, listHostBookingsWithMeta, markPaid, rejectBooking } from '../api/bookings'
 import Badge from '../components/atoms/Badge'
+import Button from '../components/atoms/Button'
+import { Card, CardContent, CardHeader, CardTitle } from '../components/atoms/Card'
+import Container from '../components/atoms/Container'
+import FormMessage from '../components/atoms/FormMessage'
+import Heading from '../components/atoms/Heading'
+import IconCheck from '../components/atoms/IconCheck'
+import IconMoney from '../components/atoms/IconMoney'
+import IconX from '../components/atoms/IconX'
+import Input from '../components/atoms/Input'
+import Label from '../components/atoms/Label'
+import Paragraph from '../components/atoms/Paragraph'
+import Select from '../components/atoms/Select'
+import { Table, TableActions, TableCell, TableHeader, TableRow } from '../components/atoms/Table'
+import Textarea from '../components/atoms/Textarea'
+import Toolbar from '../components/atoms/Toolbar'
+import { FieldLabel, FieldPill, FieldRow, RightIcon } from '../components/molecules/PillFields'
+import { useAuth } from '../supabase/AuthContext'
 
 export default function HostDashboard() {
-  const { session } = useAuth()
+  const { session, user } = useAuth()
   const token = session?.access_token
   const [form, setForm] = useState({ title: '', description: '', price: 0, location: '', image_url: '', property_type: '', amenities: '', rules: '', max_guests: 1, instant_book: false, address: '' })
   const [availability, setAvail] = useState({ accommodationId: '', date: '', capacity: 1 })
@@ -41,6 +56,68 @@ export default function HostDashboard() {
   const [actionLoading, setActionLoading] = useState(null) // { id, type }
   const [refreshTick, setRefreshTick] = useState(0)
   const [actionMessage, setActionMessage] = useState(null)
+  const [sortBy, setSortBy] = useState('start_date')
+  const [sortDir, setSortDir] = useState('asc')
+  const [q, setQ] = useState('')
+  const [dateStart, setDateStart] = useState('')
+  const [dateEnd, setDateEnd] = useState('')
+
+  const toggleSort = (field) => {
+    setSortBy(prev => field)
+    setSortDir(prev => (prev === 'asc' && field === sortBy ? 'desc' : (field === sortBy ? 'asc' : 'asc')))
+  }
+
+  const renderSort = (field) => {
+    if (sortBy !== field) return ''
+    return sortDir === 'asc' ? <ChevronUpIcon /> : <ChevronDownIcon />
+  }
+
+  const filteredItems = () => {
+    return items.filter(b => {
+      const text = q.trim().toLowerCase()
+      const matchesText = text ? (
+        (b.accommodation?.title || '').toLowerCase().includes(text) ||
+        (b.user?.full_name || '').toLowerCase().includes(text)
+      ) : true
+      const startOk = dateStart ? (new Date(b.start_date) >= new Date(dateStart)) : true
+      const endOk = dateEnd ? (new Date(b.end_date) <= new Date(dateEnd)) : true
+      return matchesText && startOk && endOk
+    })
+  }
+
+  const sortedItems = () => {
+    const compare = (a, b) => {
+      const dir = sortDir === 'asc' ? 1 : -1
+      switch (sortBy) {
+        case 'status': {
+          const order = { pending: 0, confirmed: 1, rejected: 2 }
+          return (order[a.status] - order[b.status]) * dir
+        }
+        case 'accommodation': {
+          const av = (a.accommodation?.title || '').toLowerCase()
+          const bv = (b.accommodation?.title || '').toLowerCase()
+          return av.localeCompare(bv) * dir
+        }
+        case 'start_date': {
+          return (new Date(a.start_date) - new Date(b.start_date)) * dir
+        }
+        case 'guests': {
+          return ((a.guests || 0) - (b.guests || 0)) * dir
+        }
+        case 'amount': {
+          return ((Number(a.amount) || 0) - (Number(b.amount) || 0)) * dir
+        }
+        case 'user': {
+          const av = (a.user?.full_name || '').toLowerCase()
+          const bv = (b.user?.full_name || '').toLowerCase()
+          return av.localeCompare(bv) * dir
+        }
+        default:
+          return 0
+      }
+    }
+    return [...filteredItems()].sort(compare)
+  }
 
   useEffect(() => {
     const load = async () => {
@@ -98,6 +175,7 @@ export default function HostDashboard() {
         max_guests: Number(form.max_guests),
         instant_book: !!form.instant_book,
         address: form.address,
+        host_id: user?.id,
       }
       const acc = await createAccommodation(token, payload)
       setStatus(`Creado: ${acc.id}`)
@@ -263,6 +341,18 @@ export default function HostDashboard() {
               </FieldRow>
             </FieldPill>
             <FieldPill>
+              <FieldLabel>Buscar</FieldLabel>
+              <Input $bare placeholder="Alojamiento o huésped" value={q} onChange={(e) => { setQ(e.target.value); setPage(1) }} />
+            </FieldPill>
+            <FieldPill>
+              <FieldLabel>Inicio</FieldLabel>
+              <Input $bare type="date" value={dateStart} onChange={(e) => { setDateStart(e.target.value); setPage(1) }} />
+            </FieldPill>
+            <FieldPill>
+              <FieldLabel>Fin</FieldLabel>
+              <Input $bare type="date" value={dateEnd} onChange={(e) => { setDateEnd(e.target.value); setPage(1) }} />
+            </FieldPill>
+            <FieldPill>
               <FieldLabel>Página</FieldLabel>
               <Input $bare type="number" min={1} value={page} onChange={(e) => setPage(Math.max(1, Number(e.target.value)))} />
             </FieldPill>
@@ -293,17 +383,17 @@ export default function HostDashboard() {
             <FormMessage tone={actionMessage.tone === 'warn' ? 'muted' : actionMessage.tone}>{actionMessage.text}</FormMessage>
           )}
           <Table>
-            <TableHeader cols="120px 1fr 160px 120px 120px 180px 140px 220px">
-              <TableCell>Estado</TableCell>
-              <TableCell>Alojamiento</TableCell>
-              <TableCell>Fechas</TableCell>
-              <TableCell>Huéspedes</TableCell>
-              <TableCell>Monto</TableCell>
-              <TableCell>Huésped</TableCell>
+            <TableHeader $sticky cols="120px 1fr 160px 120px 120px 180px 140px 220px">
+              <TableCell><HeaderButton onClick={() => toggleSort('status')}>Estado {renderSort('status')}</HeaderButton></TableCell>
+              <TableCell><HeaderButton onClick={() => toggleSort('accommodation')}>Alojamiento {renderSort('accommodation')}</HeaderButton></TableCell>
+              <TableCell><HeaderButton onClick={() => toggleSort('start_date')}>Fechas {renderSort('start_date')}</HeaderButton></TableCell>
+              <TableCell><HeaderButton onClick={() => toggleSort('guests')}>Huéspedes {renderSort('guests')}</HeaderButton></TableCell>
+              <TableCell><HeaderButton onClick={() => toggleSort('amount')}>Monto {renderSort('amount')}</HeaderButton></TableCell>
+              <TableCell><HeaderButton onClick={() => toggleSort('user')}>Huésped {renderSort('user')}</HeaderButton></TableCell>
               <TableCell>Contacto</TableCell>
               <TableCell>Acciones</TableCell>
             </TableHeader>
-            {items.map((b) => {
+            {sortedItems().map((b, idx) => {
             const start = new Date(b.start_date).toLocaleDateString()
             const end = new Date(b.end_date).toLocaleDateString()
             const contact = contacts[b.id]
@@ -314,7 +404,7 @@ export default function HostDashboard() {
             }[b.status] || { label: b.status, variant: 'secondary' }
             return (
               <div key={b.id}>
-                <TableRow cols="120px 1fr 160px 120px 120px 180px 140px 220px">
+                <TableRow $odd={idx % 2 === 1} cols="120px 1fr 160px 120px 120px 180px 140px 220px">
                   <TableCell>
                     <Badge $variant={statusMeta.variant} $compact>{statusMeta.label}</Badge>
                   </TableCell>
@@ -369,12 +459,12 @@ export default function HostDashboard() {
                   </TableActions>
                 </TableRow>
                 {contact && !contact.error && (
-                  <div style={{ marginTop: 6, marginLeft: 8, color: '#222' }}>
+                  <ContactCard>
                     <div style={{ fontWeight: 'bold' }}>Huésped</div>
                     <div>Nombre: {contact.guest?.name ?? '-'}</div>
                     <div>Teléfono: {contact.guest?.phone ?? '-'}</div>
                     <div>Email: {contact.guest?.email ?? '-'}</div>
-                  </div>
+                  </ContactCard>
                 )}
                 {contact && contact.error && (
                   <div style={{ marginTop: 6, marginLeft: 8, color: '#b00020' }}>{contact.error}</div>
@@ -384,6 +474,7 @@ export default function HostDashboard() {
           })}
           </Table>
           <Toolbar>
+            <Button onClick={() => exportHostCSV()}>Exportar CSV</Button>
             <Button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}>Anterior</Button>
             <Button onClick={() => setPage(p => p + 1)} disabled={Number.isFinite(total) ? (page * pageSize >= total) : items.length < pageSize}>Siguiente</Button>
           </Toolbar>
@@ -394,3 +485,39 @@ export default function HostDashboard() {
     </Container>
   )
 }
+  const ContactCard = styled.div`
+    margin-top: 6px;
+    padding: 8px;
+    background: #fff;
+    border: 1px solid ${({ theme }) => theme.colors.border};
+    border-radius: ${({ theme }) => theme.radius.sm};
+  color: ${({ theme }) => theme.colors.text};
+  `
+
+  function exportHostCSV() {
+    const rows = sortedItems()
+    const cols = [
+      { label: 'Estado', get: (r) => r.status },
+      { label: 'Alojamiento', get: (r) => r.accommodation?.title || '' },
+      { label: 'Inicio', get: (r) => String(r.start_date).slice(0,10) },
+      { label: 'Fin', get: (r) => String(r.end_date).slice(0,10) },
+      { label: 'Huéspedes', get: (r) => r.guests },
+      { label: 'Monto', get: (r) => r.amount },
+      { label: 'Huésped', get: (r) => r.user?.full_name || '' },
+      { label: 'Pago', get: (r) => r.payment_confirmed_by_host ? 'Pagado' : 'Pendiente' },
+    ]
+    const header = cols.map(c => c.label).join(',')
+    const body = rows.map(r => cols.map(c => {
+      const v = c.get(r)
+      const s = v == null ? '' : String(v).replace(/"/g, '""')
+      return `"${s}"`
+    }).join(',')).join('\n')
+    const csv = header + '\n' + body
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'reservas-host.csv'
+    a.click()
+    URL.revokeObjectURL(url)
+  }

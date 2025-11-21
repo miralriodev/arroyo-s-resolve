@@ -10,15 +10,7 @@ const Badge = styled.span`
   line-height: 1;
   background: ${({ theme }) => theme.colors.surface};
   color: ${({ theme }) => theme.colors.text};
-  box-shadow: inset 0 0 0 1px
-    ${({ theme, $variant }) =>
-      $variant === 'success'
-        ? theme.colors.success
-        : $variant === 'danger'
-        ? theme.colors.danger
-        : $variant === 'warn'
-        ? theme.colors.warn
-        : theme.colors.secondary};
+  border: 1px solid ${({ theme }) => theme.colors.border};
 
   &::before {
     content: '';

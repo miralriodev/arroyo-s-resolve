@@ -55,7 +55,9 @@ const Nav = styled.div`
     gap: ${({ theme }) => theme.spacing(7)};
     a {
       color: ${({ theme }) => theme.colors.text};
-      &.active { color: ${({ theme }) => theme.colors.primary}; }
+      text-decoration: none;
+      &:hover { text-decoration: underline; text-underline-offset: 3px; }
+      &.active { text-decoration: underline; text-underline-offset: 3px; }
     }
   }
 `
@@ -96,7 +98,7 @@ const MenuButton = styled.button`
   background: ${({ theme }) => theme.colors.surfaceAlt};
   color: ${({ theme }) => theme.colors.text};
   cursor: pointer;
-  box-shadow: ${({ theme }) => theme.shadow.sm};
+  box-shadow: none;
   &:hover { background: ${({ theme }) => theme.colors.surface }; }
   @media (min-width: ${({ theme }) => theme.breakpoints.md}) {
     display: none;
@@ -118,7 +120,7 @@ const Drawer = styled.aside`
   width: 280px;
   background: #fff;
   border-right: 1px solid ${({ theme }) => theme.colors.border};
-  box-shadow: ${({ theme }) => theme.shadow.lg};
+  box-shadow: ${({ theme }) => theme.shadow.md};
   padding: ${({ theme }) => theme.spacing(3)};
   display: grid;
   grid-template-rows: auto 1fr;
@@ -149,7 +151,7 @@ const Trigger = styled.button`
   background: ${({ theme }) => theme.colors.surfaceAlt};
   color: ${({ theme }) => theme.colors.text};
   cursor: pointer;
-  box-shadow: ${({ theme }) => theme.shadow.sm};
+  box-shadow: none;
   &:hover { background: ${({ theme }) => theme.colors.surface }; }
   span { display: none; }
 
@@ -181,7 +183,7 @@ const Menu = styled.div`
   background: #fff;
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: ${({ theme }) => theme.radius.sm};
-  box-shadow: ${({ theme }) => theme.shadow.md};
+  box-shadow: ${({ theme }) => theme.shadow.sm};
   padding: ${({ theme }) => theme.spacing(2)};
   display: grid;
   gap: ${({ theme }) => theme.spacing(2)};

@@ -8,18 +8,16 @@ const Input = styled.input`
   width: 100%;
   color: ${({ theme }) => theme.colors.text};
   font-size: 0.95rem;
-  box-shadow: ${({ theme, $minimal, $bare }) => $bare ? 'none' : ($minimal ? 'none' : theme.shadow.sm)};
-  transition: box-shadow 120ms ease, border-color 120ms ease, background 120ms ease;
+  box-shadow: ${({ theme, $minimal, $bare }) => $bare ? 'none' : 'none'};
+  transition: border-color 120ms ease, background 120ms ease;
   ::placeholder {
     color: ${({ theme }) => theme.colors.muted};
   }
-  &:hover {
-    box-shadow: ${({ theme, $minimal, $bare }) => $bare ? 'none' : ($minimal ? theme.shadow.sm : theme.shadow.md)};
-  }
+  &:hover { background: ${({ $bare, theme }) => $bare ? 'transparent' : theme.colors.surfaceAlt}; }
   &:focus {
     outline: none;
-    border-color: ${({ theme, $minimal, $bare }) => $bare ? 'transparent' : ($minimal ? theme.colors.text : theme.colors.secondary)};
-    box-shadow: ${({ $minimal, $bare }) => $bare ? 'none' : ($minimal ? '0 0 0 3px rgba(33, 53, 71, 0.15)' : '0 0 0 3px rgba(25, 118, 210, 0.15)')};
+    border-color: ${({ theme, $minimal, $bare }) => $bare ? 'transparent' : ($minimal ? theme.colors.text : theme.colors.border)};
+    box-shadow: ${({ $bare }) => $bare ? 'none' : '0 0 0 3px rgba(0,0,0,0.06)'};
   }
 `
 
