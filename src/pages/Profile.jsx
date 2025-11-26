@@ -1,7 +1,9 @@
+import { BarChartIcon, CheckCircledIcon, ClockIcon, CrossCircledIcon } from '@radix-ui/react-icons'
 import { useEffect, useRef, useState } from 'react'
-import styled from 'styled-components'
+import { useNavigate } from 'react-router-dom'
+import styled, { keyframes } from 'styled-components'
 import { syncProfile as syncProfileRequest } from '../api/auth'
-import { listMyBookingsWithMeta } from '../api/bookings'
+import { listAllBookingsWithMeta, listHostBookingsWithMeta, listMyBookingsWithMeta } from '../api/bookings'
 import Badge from '../components/atoms/Badge'
 import Button from '../components/atoms/Button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../components/atoms/Card'
@@ -11,6 +13,7 @@ import Input from '../components/atoms/Input'
 import Label from '../components/atoms/Label'
 import { Table, TableCell, TableHeader, TableRow } from '../components/atoms/Table'
 import Textarea from '../components/atoms/Textarea'
+import BookingCard from '../components/molecules/BookingCard'
 import { useAuth } from '../supabase/AuthContext'
 import { supabase } from '../supabase/supabase.config.jsx'
 
@@ -95,9 +98,67 @@ const TileText = styled.div`
   small { color: #808080; }
 `
 
+const DashboardGrid = styled.div`
+  display: grid;
+  gap: ${({ theme }) => theme.spacing(3)};
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  margin-top: ${({ theme }) => theme.spacing(3)};
+`
+
+const StatCard = styled.div`
+  display: grid;
+  gap: 8px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.radius.md};
+  background: linear-gradient(180deg, #fff, #fafafa);
+  padding: 16px;
+  text-align: center;
+  box-shadow: ${({ theme }) => theme.shadow.sm};
+  transition: transform 120ms ease-out, box-shadow 120ms ease-out;
+  &:hover { transform: translateY(-1px); box-shadow: ${({ theme }) => theme.shadow.md}; }
+  &:focus-within { outline: 2px solid ${({ theme }) => theme.colors.focus}; outline-offset: 2px; }
+  .icon { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; margin: 0 auto; color: ${({ theme }) => theme.colors.muted}; }
+  h3 { font-size: 0.92rem; font-weight: 600; margin: 0; }
+  .value { font-size: 1.5rem; font-weight: 700; }
+`
+
+const fadeIn = keyframes`
+  from { opacity: 0 }
+  to { opacity: 1 }
+`
+const slideUp = keyframes`
+  from { transform: translateY(12px); opacity: 0 }
+  to { transform: translateY(0); opacity: 1 }
+`
+const ModalBackdrop = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.3);
+  animation: ${fadeIn} 120ms ease-out;
+  z-index: 30;
+`
+const ModalSheet = styled.div`
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 520px;
+  background: #fff;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.radius.md};
+  box-shadow: ${({ theme }) => theme.shadow.md};
+  animation: ${slideUp} 140ms ease-out;
+  z-index: 31;
+  display: grid;
+  gap: ${({ theme }) => theme.spacing(3)};
+  padding: ${({ theme }) => theme.spacing(4)};
+`
+
 export default function Profile() {
   const { user, session } = useAuth()
   const token = session?.access_token
+  const navigate = useNavigate()
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -112,10 +173,16 @@ export default function Profile() {
     superhost: false,
     city: ''
   })
+  const [nameModal, setNameModal] = useState(false)
+  const [phoneModal, setPhoneModal] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newPhone, setNewPhone] = useState('')
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState('')
   const [avatarUploading, setAvatarUploading] = useState(false)
   const fileRef = useRef(null)
+  const [roleStats, setRoleStats] = useState(null)
+  const [infoModal, setInfoModal] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -134,6 +201,20 @@ export default function Profile() {
     if (token) load()
   }, [token])
 
+  const CardsList = styled.div`
+    display: none;
+    @media (max-width: ${({ theme }) => theme.breakpoints.md}) {
+      display: grid;
+      gap: ${({ theme }) => theme.spacing(4)};
+    }
+  `
+  const DesktopOnly = styled.div`
+    display: block;
+    @media (max-width: ${({ theme }) => theme.breakpoints.md}) {
+      display: none;
+    }
+  `
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -149,12 +230,39 @@ export default function Profile() {
           superhost: Boolean(p?.superhost),
           city: p?.city || ''
         })
+        setNewName(p?.full_name || (user?.user_metadata?.full_name || ''))
+        setNewPhone(p?.phone || '')
       } catch (_) {
         // Silenciar
       }
     }
     if (token) fetchProfile()
   }, [token])
+
+  useEffect(() => {
+    const loadRoleStats = async () => {
+      if (!token) return
+      const r = String(profile?.role || '').toLowerCase()
+      if (r === 'host') {
+        const { items } = await listHostBookingsWithMeta(token, { page: 1, pageSize: 50 })
+        const pending = items.filter(b => b.status === 'pending').length
+        const confirmed = items.filter(b => b.status === 'confirmed').length
+        const rejected = items.filter(b => b.status === 'rejected').length
+        const revenue = items.filter(b => b.status === 'confirmed').reduce((s, b) => s + Number(b.amount || 0), 0)
+        setRoleStats({ scope: 'host', pending, confirmed, rejected, revenue })
+      } else if (r === 'admin') {
+        const { items } = await listAllBookingsWithMeta(token, { page: 1, pageSize: 50 })
+        const pending = items.filter(b => b.status === 'pending').length
+        const confirmed = items.filter(b => b.status === 'confirmed').length
+        const rejected = items.filter(b => b.status === 'rejected').length
+        const revenue = items.filter(b => b.status === 'confirmed').reduce((s, b) => s + Number(b.amount || 0), 0)
+        setRoleStats({ scope: 'admin', pending, confirmed, rejected, revenue })
+      } else {
+        setRoleStats(null)
+      }
+    }
+    loadRoleStats()
+  }, [token, profile?.role])
 
   const onSave = async (e) => {
     e?.preventDefault?.()
@@ -223,7 +331,7 @@ export default function Profile() {
                 <span className="primary">Hola,</span> {user?.user_metadata?.full_name || user?.email || 'Usuario'}
               </Greeting>
               <div style={{ display: 'grid', gap: 12, width: '100%', maxWidth: 520 }}>
-                <Tile onClick={() => {}} disabled>
+                <Tile onClick={() => setNameModal(true)}>
                   <svg width="33" height="33" viewBox="0 0 24 24" fill="none" stroke="#4373de" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-3-3.87"/><path d="M4 21v-2a4 4 0 0 1 3-3.87"/><circle cx="12" cy="7" r="4"/></svg>
                   <TileText>
                     <strong>{user?.user_metadata?.full_name || 'Nombre'}</strong>
@@ -234,14 +342,21 @@ export default function Profile() {
                   <svg width="33" height="33" viewBox="0 0 24 24" fill="none" stroke="#4373de" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16v16H4z"/><path d="M22 7l-10 7L2 7"/></svg>
                   <TileText>
                     <strong>{user?.email || '-'}</strong>
-                    <small>Actualiza tu correo electrónico</small>
+                    <small>El email se guarda al crear la cuenta</small>
                   </TileText>
                 </Tile>
-                <Tile onClick={() => {}} disabled>
-                  <svg width="33" height="33" viewBox="0 0 24 24" fill="none" stroke="#4373de" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                <Tile onClick={() => setPhoneModal(true)}>
+                  <svg width="33" height="33" viewBox="0 0 24 24" fill="none" stroke="#4373de" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8 9a16 16 0 0 0 7 7l.36-.36a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                   <TileText>
-                    <strong>Verifica tu cuenta</strong>
-                    <small>Valida los datos de tu cuenta</small>
+                    <strong>{profile?.phone || 'Teléfono'}</strong>
+                    <small>Actualiza tu teléfono</small>
+                  </TileText>
+                </Tile>
+                <Tile onClick={() => setInfoModal(true)}>
+                  <svg width="33" height="33" viewBox="0 0 24 24" fill="none" stroke="#4373de" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M12 4h9"/><path d="M4 9h16"/><path d="M4 15h16"/></svg>
+                  <TileText>
+                    <strong>Actualiza tu información</strong>
+                    <small>Edita tu perfil público</small>
                   </TileText>
                 </Tile>
                 <Tile onClick={() => {}} disabled>
@@ -277,6 +392,134 @@ export default function Profile() {
           </CardContent>
           <CardFooter>
             <form onSubmit={onSave} style={{ width: '100%' }}>
+              {roleStats && (
+                <DashboardGrid>
+                  <StatCard aria-label="Reservas pendientes">
+                    <div className="icon"><ClockIcon /></div>
+                    <h3>{roleStats.scope === 'admin' ? 'Pendientes' : 'Reservas pendientes'}</h3>
+                    <div className="value">{roleStats.pending}</div>
+                  </StatCard>
+                  <StatCard aria-label="Reservas confirmadas">
+                    <div className="icon"><CheckCircledIcon /></div>
+                    <h3>{roleStats.scope === 'admin' ? 'Confirmadas' : 'Reservas confirmadas'}</h3>
+                    <div className="value">{roleStats.confirmed}</div>
+                  </StatCard>
+                  <StatCard aria-label="Reservas rechazadas">
+                    <div className="icon"><CrossCircledIcon /></div>
+                    <h3>Rechazadas</h3>
+                    <div className="value">{roleStats.rejected}</div>
+                  </StatCard>
+                  <StatCard aria-label="Ingresos estimados">
+                    <div className="icon"><BarChartIcon /></div>
+                    <h3>Ingresos estimados</h3>
+                    <div className="value">${roleStats.revenue}</div>
+                  </StatCard>
+                </DashboardGrid>
+              )}
+              {roleStats && (
+                <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
+                  {roleStats.scope === 'host' && (
+                    <>
+                      <Button onClick={() => navigate('/host')}>Ir a reservas</Button>
+                      <Button onClick={() => navigate('/host')}>Crear alojamiento</Button>
+                    </>
+                  )}
+                  {roleStats.scope === 'admin' && (
+                    <Button onClick={() => navigate('/admin')}>Panel de administración</Button>
+                  )}
+                </div>
+              )}
+              
+            </form>
+          </CardFooter>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Contacto</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <InfoGrid>
+              <InfoItem>
+                <strong>Nombre</strong>
+                <span>{profile?.full_name || user?.user_metadata?.full_name || '-'}</span>
+              </InfoItem>
+              <InfoItem>
+                <strong>Email</strong>
+                <span>{user?.email || '-'}</span>
+              </InfoItem>
+              <InfoItem>
+                <strong>Teléfono</strong>
+                <span>{profile?.phone || '-'}</span>
+              </InfoItem>
+            </InfoGrid>
+          </CardContent>
+          
+        </Card>
+
+        {nameModal && (
+          <>
+            <ModalBackdrop onClick={() => setNameModal(false)} />
+            <ModalSheet role="dialog" aria-modal="true" aria-labelledby="modal-name-title">
+              <CardTitle id="modal-name-title">Actualizar nombre</CardTitle>
+              <Label>Nombre
+                <Input value={newName} onChange={(e) => setNewName(e.target.value)} />
+              </Label>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <Button onClick={() => setNameModal(false)}>Cancelar</Button>
+                <Button $variant="outline" onClick={async () => {
+                  setSaving(true)
+                  setSaveMsg('')
+                  try {
+                    const updated = await syncProfileRequest(token, { full_name: newName })
+                    setProfile(prev => ({ ...(prev || {}), full_name: updated?.full_name || newName }))
+                    setNameModal(false)
+                    setSaveMsg('Nombre actualizado')
+                  } catch (err) {
+                    setSaveMsg(err?.message || 'No se pudo actualizar el nombre')
+                  } finally {
+                    setSaving(false)
+                  }
+                }}>Guardar</Button>
+              </div>
+            </ModalSheet>
+          </>
+        )}
+
+        {phoneModal && (
+          <>
+            <ModalBackdrop onClick={() => setPhoneModal(false)} />
+            <ModalSheet role="dialog" aria-modal="true" aria-labelledby="modal-phone-title">
+              <CardTitle id="modal-phone-title">Actualizar teléfono</CardTitle>
+              <Label>Teléfono
+                <Input type="tel" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} placeholder="+54 9 1234 5678" />
+              </Label>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <Button onClick={() => setPhoneModal(false)}>Cancelar</Button>
+                <Button $variant="outline" onClick={async () => {
+                  setSaving(true)
+                  setSaveMsg('')
+                  try {
+                    const updated = await syncProfileRequest(token, { phone: newPhone || null })
+                    setProfile(prev => ({ ...(prev || {}), phone: updated?.phone || newPhone || null }))
+                    setPhoneModal(false)
+                    setSaveMsg('Teléfono actualizado')
+                  } catch (err) {
+                    setSaveMsg(err?.message || 'No se pudo actualizar el teléfono')
+                  } finally {
+                    setSaving(false)
+                  }
+                }}>Guardar</Button>
+              </div>
+            </ModalSheet>
+          </>
+        )}
+
+        {infoModal && (
+          <>
+            <ModalBackdrop onClick={() => setInfoModal(false)} />
+            <ModalSheet role="dialog" aria-modal="true" aria-labelledby="modal-info-title">
+              <CardTitle id="modal-info-title">Actualizar información</CardTitle>
               <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
                 <Label>Descripción breve (título)
                   <Input value={edit.host_title} onChange={(e) => setEdit({ ...edit, host_title: e.target.value })} />
@@ -303,13 +546,37 @@ export default function Profile() {
               <Label>Biografía
                 <Textarea value={edit.host_bio} onChange={(e) => setEdit({ ...edit, host_bio: e.target.value })} />
               </Label>
-              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-                <Button $variant="primary" type="submit" disabled={saving}>{saving ? 'Guardando…' : 'Guardar cambios'}</Button>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <Button onClick={() => setInfoModal(false)}>Cancelar</Button>
+                <Button $variant="outline" onClick={async () => {
+                  setSaving(true)
+                  setSaveMsg('')
+                  try {
+                    const payload = {
+                      host_title: edit.host_title,
+                      host_bio: edit.host_bio,
+                      languages: edit.languages.split(',').map(s => s.trim()).filter(Boolean),
+                      years_experience: Number(edit.years_experience) || 0,
+                      response_rate: Number(edit.response_rate) || 0,
+                      response_time: edit.response_time,
+                      superhost: Boolean(edit.superhost),
+                      city: edit.city
+                    }
+                    const updated = await syncProfileRequest(token, payload)
+                    setProfile(updated || payload)
+                    setSaveMsg('Perfil actualizado')
+                    setInfoModal(false)
+                  } catch (err) {
+                    setSaveMsg(err?.message || 'No se pudo guardar')
+                  } finally {
+                    setSaving(false)
+                  }
+                }}>Guardar</Button>
               </div>
               {saveMsg && <FormMessage tone={saveMsg.includes('actualizado') ? 'success' : 'error'}>{saveMsg}</FormMessage>}
-            </form>
-          </CardFooter>
-        </Card>
+            </ModalSheet>
+          </>
+        )}
 
         <Card>
           <CardHeader>
@@ -322,6 +589,13 @@ export default function Profile() {
               items.length === 0 ? (
                 <p>No tienes reservas aún.</p>
               ) : (
+                <div>
+                  <CardsList>
+                    {items.map((b) => (
+                      <BookingCard key={b.id} booking={b} showContactActions={false} />
+                    ))}
+                  </CardsList>
+                  <DesktopOnly>
                 <Table>
                   <TableHeader cols="120px 1fr 160px 140px">
                     <TableCell>Estado</TableCell>
@@ -365,6 +639,8 @@ export default function Profile() {
                     )
                   })}
                 </Table>
+                  </DesktopOnly>
+                </div>
               )
             )}
           </CardContent>

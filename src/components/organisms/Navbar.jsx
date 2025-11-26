@@ -14,12 +14,12 @@ const Bar = styled.nav`
   grid-template-columns: auto 1fr auto;
   grid-template-areas: 'left center right';
   align-items: center;
-  padding: ${({ theme }) => `${theme.spacing(4)} ${theme.spacing(17)}`};
+  padding: ${({ theme }) => `${theme.spacing(4)} ${theme.spacing(8.5)}`};
   background: ${({ theme }) => theme.colors.surface};
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
   gap: ${({ theme }) => theme.spacing(3)};
   @media (max-width: ${({ theme }) => theme.breakpoints.md}) {
-    padding: ${({ theme }) => `${theme.spacing(3)} ${theme.spacing(3)}`};
+    padding: ${({ theme }) => `${theme.spacing(3)} ${theme.spacing(1.5)}`};
   }
 `
 

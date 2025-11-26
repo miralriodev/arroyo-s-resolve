@@ -68,11 +68,12 @@ exports.requestBooking = async (userId, body) => {
   }
 
   const nights = Math.max(1, Math.ceil((end - start) / 86400000));
+  const pax = Number(guests) || 1;
   let amount;
   if (acc?.price && typeof acc.price.mul === 'function') {
-    amount = acc.price.mul(nights);
+    amount = acc.price.mul(nights).mul(pax);
   } else {
-    const base = Number(body.amount ?? acc.price ?? 0) * nights;
+    const base = Number(body.amount ?? acc.price ?? 0) * nights * pax;
     amount = new Prisma.Decimal(String(base.toFixed ? base.toFixed(2) : base));
   }
 
@@ -207,10 +208,25 @@ exports.getContact = async (userId, bookingId) => {
   const host = booking.accommodation.host;
   const guest = booking.user;
 
-  return {
-    host: { name: host?.full_name, phone: host?.phone, email: host?.contact_email },
-    guest: { name: guest?.full_name, phone: guest?.phone, email: guest?.contact_email },
-  };
+  // Obtener contacto extendido vía SQL crudo para columnas fuera del modelo Prisma
+  let hostContact = { name: host?.full_name, phone: null, email: null };
+  let guestContact = { name: guest?.full_name, phone: null, email: null };
+  try {
+    const [hostRow] = await prisma.$queryRawUnsafe(`SELECT contact_email, phone, (SELECT email FROM auth.users WHERE id = '${host?.id}') AS auth_email FROM public.profiles WHERE id = '${host?.id}'`);
+    if (hostRow) {
+      hostContact.email = hostRow.contact_email || hostRow.auth_email || null;
+      hostContact.phone = hostRow.phone || null;
+    }
+  } catch (_) {}
+  try {
+    const [guestRow] = await prisma.$queryRawUnsafe(`SELECT contact_email, phone, (SELECT email FROM auth.users WHERE id = '${guest?.id}') AS auth_email FROM public.profiles WHERE id = '${guest?.id}'`);
+    if (guestRow) {
+      guestContact.email = guestRow.contact_email || guestRow.auth_email || null;
+      guestContact.phone = guestRow.phone || null;
+    }
+  } catch (_) {}
+
+  return { host: hostContact, guest: guestContact };
 };
 
 // Lista de reservas del usuario autenticado (con filtros y paginación)

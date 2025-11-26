@@ -1,7 +1,7 @@
 import { CalendarIcon } from '@radix-ui/react-icons'
-import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
-import styled from 'styled-components'
+import { useEffect, useRef, useState } from 'react'
+ import { useParams } from 'react-router-dom'
+import styled, { keyframes } from 'styled-components'
 import { getAccommodation, listAvailability } from '../api/accommodations'
 import { requestBooking } from '../api/bookings'
 import { listAccommodationReviews } from '../api/reviews'
@@ -26,6 +26,42 @@ export default function AccommodationDetail() {
   const [bookingStatus, setBookingStatus] = useState(null)
   const [availability, setAvailability] = useState([])
   const [availStatus, setAvailStatus] = useState(null)
+  const [bookingModal, setBookingModal] = useState(null)
+  const modalRef = useRef(null)
+  const closeRef = useRef(null)
+
+  const fadeIn = keyframes`
+    from { opacity: 0 }
+    to { opacity: 1 }
+  `
+  const slideUp = keyframes`
+    from { transform: translateY(12px); opacity: 0 }
+    to { transform: translateY(0); opacity: 1 }
+  `
+  const ModalBackdrop = styled.div`
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.3);
+    animation: ${fadeIn} 120ms ease-out;
+    z-index: 30;
+  `
+  const ModalSheet = styled.div`
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 520px;
+    background: #fff;
+    border: 1px solid ${({ theme }) => theme.colors.border};
+    border-radius: ${({ theme }) => theme.radius.md};
+    box-shadow: ${({ theme }) => theme.shadow.md};
+    animation: ${slideUp} 140ms ease-out;
+    z-index: 31;
+    display: grid;
+    gap: ${({ theme }) => theme.spacing(3)};
+    padding: ${({ theme }) => theme.spacing(4)};
+  `
 
   const Image = styled.img`
     width: 100%;
@@ -114,12 +150,48 @@ export default function AccommodationDetail() {
       const payload = { accommodationId: Number(id), ...form }
       const token = session?.access_token
       const data = await requestBooking(token, payload)
-      setBookingStatus(`Reserva ${data.status}`)
+      setBookingStatus(null)
+      setBookingModal(data)
     } catch (e) {
       const msg = e?.response?.data?.error || e?.message || 'Error al reservar'
       setBookingStatus(msg)
     }
   }
+
+  useEffect(() => {
+    if (!bookingModal) return
+    const focusableSelector = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    const handleKey = (e) => {
+      if (!modalRef.current) return
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        setBookingModal(null)
+        return
+      }
+      if (e.key === 'Tab') {
+        const nodes = modalRef.current.querySelectorAll(focusableSelector)
+        const elements = Array.prototype.slice.call(nodes)
+        if (!elements.length) return
+        const first = elements[0]
+        const last = elements[elements.length - 1]
+        const active = document.activeElement
+        if (e.shiftKey) {
+          if (active === first) {
+            e.preventDefault()
+            last.focus()
+          }
+        } else {
+          if (active === last) {
+            e.preventDefault()
+            first.focus()
+          }
+        }
+      }
+    }
+    if (closeRef.current) closeRef.current.focus()
+    document.addEventListener('keydown', handleKey)
+    return () => document.removeEventListener('keydown', handleKey)
+  }, [bookingModal])
 
   if (loading) return <Container>Cargando…</Container>
   if (!acc) return <Container>No encontrado</Container>
@@ -185,6 +257,22 @@ export default function AccommodationDetail() {
               </FieldRow>
             </PillCell>
           </PillGroup>
+          {form.start_date && form.end_date && (
+            <div style={{ marginTop: 8 }} aria-live="polite">
+              {(() => {
+                const start = new Date(form.start_date)
+                const end = new Date(form.end_date)
+                const nights = Math.max(0, Math.round((end - start) / 86400000))
+                const total = nights * Number(acc.price || 0) * Number(form.guests || 1)
+                return (
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                    <span><strong>{nights}</strong> noches × ${Number(acc.price) || 0} · {form.guests} huéspedes</span>
+                    <Badge $variant="secondary" $compact>Total estimado: ${total}</Badge>
+                  </div>
+                )
+              })()}
+            </div>
+          )}
           {bookingStatus && <FormMessage tone={bookingStatus === 'loading' ? 'muted' : (bookingStatus?.toLowerCase().includes('error') ? 'error' : 'success')}>{bookingStatus === 'loading' ? 'Procesando…' : bookingStatus}</FormMessage>}
         </CardContent>
         <CardFooter>
@@ -296,6 +384,26 @@ export default function AccommodationDetail() {
           )}
         </CardContent>
       </Card>
+
+      {bookingModal && (
+        <>
+          <ModalBackdrop onClick={() => setBookingModal(null)} />
+          <ModalSheet role="dialog" aria-modal="true" aria-labelledby="booking-title" ref={modalRef}>
+            <Heading as="h3" level={3} id="booking-title">Reserva enviada</Heading>
+            <div style={{ display: 'grid', gap: 8 }}>
+              <div><strong>Estado:</strong> {bookingModal.status}</div>
+              <div><strong>Inicio:</strong> {new Date(bookingModal.start_date).toLocaleDateString()}</div>
+              <div><strong>Fin:</strong> {new Date(bookingModal.end_date).toLocaleDateString()}</div>
+              <div><strong>Huéspedes:</strong> {bookingModal.guests}</div>
+              <div><strong>Monto:</strong> ${Number(bookingModal.amount)}</div>
+              <FormMessage tone="muted">Recibirás una confirmación cuando el anfitrión acepte tu solicitud.</FormMessage>
+            </div>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <Button onClick={() => setBookingModal(null)} ref={closeRef}>Cerrar</Button>
+            </div>
+          </ModalSheet>
+        </>
+      )}
     </Container>
   )
 }

@@ -27,16 +27,7 @@ const Badge = styled.span`
         ? theme.colors.warn
         : theme.colors.secondary};
   }
-
-  @media (max-width: ${({ theme }) => theme.breakpoints.sm}) {
-    font-size: 0; /* oculta el texto, deja visible el dot */
-    padding: 0;
-    gap: 0;
-    background: transparent;
-    box-shadow: none;
-    min-width: 8px;
-    min-height: 8px;
-  }
+  /* Mantener texto visible también en mobile */
 `
 
 export default Badge
