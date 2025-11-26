@@ -54,7 +54,7 @@ const Footer = styled.div`
   border-top: 1px solid ${({ theme }) => theme.colors.border};
 `
 
-export default function BookingCard({ booking, contact, onShowContact, onHideContact, contactLoading }) {
+export default function BookingCard({ booking, contact, onShowContact, onHideContact, contactLoading, showContactActions = true }) {
   const statusMeta = {
     pending: { label: 'Pendiente', variant: 'warn' },
     confirmed: { label: 'Confirmada', variant: 'success' },
@@ -89,16 +89,18 @@ export default function BookingCard({ booking, contact, onShowContact, onHideCon
         </Meta>
       </Content>
       <Footer>
-        {booking.status === 'confirmed' ? (
-          contact ? (
-            <Button $variant="outline" onClick={() => onHideContact(booking.id)}>Ocultar contacto</Button>
+        {showContactActions && (
+          booking.status === 'confirmed' ? (
+            contact ? (
+              <Button $variant="outline" onClick={() => onHideContact(booking.id)}>Ocultar contacto</Button>
+            ) : (
+              <Button $variant="outline" onClick={() => onShowContact(booking.id)} disabled={contactLoading === booking.id}>
+                {contactLoading === booking.id ? 'Cargando…' : 'Ver contacto'}
+              </Button>
+            )
           ) : (
-            <Button $variant="outline" onClick={() => onShowContact(booking.id)} disabled={contactLoading === booking.id}>
-              {contactLoading === booking.id ? 'Cargando…' : 'Ver contacto'}
-            </Button>
+            <span style={{ color: '#6b7280' }}>Confirmar para ver contacto</span>
           )
-        ) : (
-          <span style={{ color: '#6b7280' }}>Confirmar para ver contacto</span>
         )}
         <div>
           {booking.payment_confirmed_by_host ? (

@@ -1,25 +1,11 @@
-import { ChevronDownIcon, ChevronUpIcon } from '@radix-ui/react-icons'
+import { BarChartIcon, CheckCircledIcon, ChevronDownIcon, ChevronUpIcon, ClockIcon, CrossCircledIcon } from '@radix-ui/react-icons'
 import { useEffect, useState } from 'react'
-import styled from 'styled-components'
-
-const HeaderButton = styled.button`
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: ${({ theme }) => theme.colors.text};
-  font-weight: 600;
-  cursor: pointer;
-  text-align: left;
-  &:hover { text-decoration: underline; text-underline-offset: 3px; }
-`
+import styled, { keyframes } from 'styled-components'
 import { createAccommodation, setAvailability } from '../api/accommodations'
 import { confirmBooking, getContact, listHostBookingsWithMeta, markPaid, rejectBooking } from '../api/bookings'
 import Badge from '../components/atoms/Badge'
 import Button from '../components/atoms/Button'
-import { Card, CardContent, CardHeader, CardTitle } from '../components/atoms/Card'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../components/atoms/Card'
 import Container from '../components/atoms/Container'
 import FormMessage from '../components/atoms/FormMessage'
 import Heading from '../components/atoms/Heading'
@@ -36,10 +22,83 @@ import Toolbar from '../components/atoms/Toolbar'
 import { FieldLabel, FieldPill, FieldRow, RightIcon } from '../components/molecules/PillFields'
 import { useAuth } from '../supabase/AuthContext'
 
+const HeaderButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: ${({ theme }) => theme.colors.text};
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  &:hover { text-decoration: underline; text-underline-offset: 3px; }
+`
+
+const fadeIn = keyframes`
+  from { opacity: 0 }
+  to { opacity: 1 }
+`
+
+const slideUp = keyframes`
+  from { transform: translateY(12px); opacity: 0 }
+  to { transform: translateY(0); opacity: 1 }
+`
+
+const ModalBackdrop = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.3);
+  animation: ${fadeIn} 120ms ease-out;
+  z-index: 30;
+`
+
+const ModalSheet = styled.div`
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 520px;
+  background: #fff;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.radius.md};
+  box-shadow: ${({ theme }) => theme.shadow.md};
+  animation: ${slideUp} 140ms ease-out;
+  z-index: 31;
+  display: grid;
+  gap: ${({ theme }) => theme.spacing(3)};
+  padding: ${({ theme }) => theme.spacing(4)};
+`
+
+const DashboardGrid = styled.div`
+  display: grid;
+  gap: ${({ theme }) => theme.spacing(3)};
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+`
+
+const StatCard = styled.div`
+  display: grid;
+  gap: 8px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.radius.md};
+  background: linear-gradient(180deg, #fff, #fafafa);
+  padding: 16px;
+  text-align: center;
+  box-shadow: ${({ theme }) => theme.shadow.sm};
+  transition: transform 120ms ease-out, box-shadow 120ms ease-out;
+  &:hover { transform: translateY(-1px); box-shadow: ${({ theme }) => theme.shadow.md}; }
+  &:focus-within { outline: 2px solid ${({ theme }) => theme.colors.focus}; outline-offset: 2px; }
+  .icon { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; margin: 0 auto; color: ${({ theme }) => theme.colors.muted}; }
+  h3 { font-size: 0.92rem; font-weight: 600; margin: 0; }
+  .value { font-size: 1.5rem; font-weight: 700; }
+`
+
 export default function HostDashboard() {
   const { session, user } = useAuth()
   const token = session?.access_token
-  const [form, setForm] = useState({ title: '', description: '', price: 0, location: '', image_url: '', property_type: '', amenities: '', rules: '', max_guests: 1, instant_book: false, address: '' })
+  const [form, setForm] = useState({ title: '', description: '', price: 0, location: '', image_url: '', property_type: '', amenities: '', rules: '', max_guests: 1, instant_book: false, address: '', category: 'city' })
   const [availability, setAvail] = useState({ accommodationId: '', date: '', capacity: 1 })
   const [status, setStatus] = useState(null)
 
@@ -61,6 +120,22 @@ export default function HostDashboard() {
   const [q, setQ] = useState('')
   const [dateStart, setDateStart] = useState('')
   const [dateEnd, setDateEnd] = useState('')
+  const [contactModal, setContactModal] = useState(null)
+  const [paymentModal, setPaymentModal] = useState(null)
+
+  const MobileCards = styled.div`
+    display: none;
+    @media (max-width: ${({ theme }) => theme.breakpoints.md}) {
+      display: grid;
+      gap: ${({ theme }) => theme.spacing(4)};
+    }
+  `
+  const DesktopOnly = styled.div`
+    display: block;
+    @media (max-width: ${({ theme }) => theme.breakpoints.md}) {
+      display: none;
+    }
+  `
 
   const toggleSort = (field) => {
     setSortBy(field)
@@ -144,6 +219,7 @@ export default function HostDashboard() {
     try {
       const data = await getContact(token, bookingId)
       setContacts(prev => ({ ...prev, [bookingId]: data }))
+      setContactModal(bookingId)
     } catch (e) {
       const msg = e?.response?.data?.error || e?.message || 'No se pudo obtener contacto'
       setContacts(prev => ({ ...prev, [bookingId]: { error: msg } }))
@@ -153,11 +229,7 @@ export default function HostDashboard() {
   }
 
   const hideContact = (bookingId) => {
-    setContacts(prev => {
-      const next = { ...prev }
-      delete next[bookingId]
-      return next
-    })
+    setContactModal(null)
   }
 
   const createAcc = async () => {
@@ -167,15 +239,14 @@ export default function HostDashboard() {
         title: form.title,
         description: form.description,
         price: Number(form.price),
+        category: form.category,
         location: form.location,
         image_url: form.image_url,
         property_type: form.property_type,
         amenities: form.amenities ? form.amenities.split(',').map(s => s.trim()).filter(Boolean) : [],
-        rules: form.rules,
         max_guests: Number(form.max_guests),
         instant_book: !!form.instant_book,
         address: form.address,
-        host_id: user?.id,
       }
       const acc = await createAccommodation(token, payload)
       setStatus(`Creado: ${acc.id}`)
@@ -284,6 +355,14 @@ export default function HostDashboard() {
               <Input placeholder="Ubicación" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
             </Label>
             <Label>
+              Categoría
+              <Select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
+                <option value="city">Ciudad</option>
+                <option value="beach">Playa</option>
+                <option value="mountain">Montaña</option>
+              </Select>
+            </Label>
+            <Label>
               Precio por noche
               <Input placeholder="Precio por noche" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
             </Label>
@@ -355,6 +434,33 @@ export default function HostDashboard() {
           <CardTitle>Reservas de mis alojamientos</CardTitle>
         </CardHeader>
         <CardContent>
+          <DashboardGrid>
+            <StatCard aria-label="Total reservas">
+              <div className="icon"><BarChartIcon /></div>
+              <h3>Reservas</h3>
+              <div className="value">{items.length}</div>
+            </StatCard>
+            <StatCard aria-label="Reservas pendientes">
+              <div className="icon"><ClockIcon /></div>
+              <h3>Pendientes</h3>
+              <div className="value">{items.filter(b => b.status === 'pending').length}</div>
+            </StatCard>
+            <StatCard aria-label="Reservas confirmadas">
+              <div className="icon"><CheckCircledIcon /></div>
+              <h3>Confirmadas</h3>
+              <div className="value">{items.filter(b => b.status === 'confirmed').length}</div>
+            </StatCard>
+            <StatCard aria-label="Reservas rechazadas">
+              <div className="icon"><CrossCircledIcon /></div>
+              <h3>Rechazadas</h3>
+              <div className="value">{items.filter(b => b.status === 'rejected').length}</div>
+            </StatCard>
+            <StatCard aria-label="Ingresos confirmados">
+              <div className="icon"><BarChartIcon /></div>
+              <h3>Ingresos</h3>
+              <div className="value">${items.filter(b => b.status === 'confirmed').reduce((s, b) => s + Number(b.amount || 0), 0)}</div>
+            </StatCard>
+          </DashboardGrid>
           <Toolbar style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
             <FieldPill>
               <FieldLabel>Estado</FieldLabel>
@@ -410,6 +516,53 @@ export default function HostDashboard() {
           {actionMessage && (
             <FormMessage tone={actionMessage.tone === 'warn' ? 'muted' : actionMessage.tone}>{actionMessage.text}</FormMessage>
           )}
+          <MobileCards>
+            {sortedItems().map((b) => {
+              const start = new Date(b.start_date).toLocaleDateString()
+              const end = new Date(b.end_date).toLocaleDateString()
+              return (
+                <Card key={b.id} aria-label={`Reserva ${b.accommodation?.title || ''}`}>
+                  <CardContent>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <strong>{b.accommodation?.title}</strong>
+                      <Badge $variant={b.status === 'confirmed' ? 'success' : (b.status === 'pending' ? 'warn' : 'danger')} $compact>
+                        {b.status === 'confirmed' ? 'Confirmada' : (b.status === 'pending' ? 'Pendiente' : 'Rechazada')}
+                      </Badge>
+                    </div>
+                    <div style={{ color: '#666' }}>{start} — {end} · {b.guests} huésped(es)</div>
+                    <div style={{ color: '#666' }}>{b.accommodation?.location || ''} · ${Number(b.amount)}</div>
+                    <div style={{ marginTop: 6 }}>
+                      <Badge $variant={b.payment_confirmed_by_host ? 'success' : 'warn'} $compact>
+                        {b.payment_confirmed_by_host ? 'Pagado' : 'Pago pendiente'}
+                      </Badge>
+                    </div>
+                  </CardContent>
+                  <CardFooter>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {b.status === 'pending' && (
+                        <>
+                          <Button title="Confirma la reserva" onClick={() => doConfirm(b.id)} disabled={actionLoading?.id === b.id && actionLoading?.type === 'confirm'}>
+                            {actionLoading?.id === b.id && actionLoading?.type === 'confirm' ? 'Confirmando…' : 'Confirmar'}
+                          </Button>
+                          <Button title="Rechaza la reserva" onClick={() => doReject(b.id)} disabled={actionLoading?.id === b.id && actionLoading?.type === 'reject'}>
+                            {actionLoading?.id === b.id && actionLoading?.type === 'reject' ? 'Rechazando…' : 'Rechazar'}
+                          </Button>
+                        </>
+                      )}
+                      {b.status === 'confirmed' && (
+                        <>
+                          <Button title="Muestra datos de contacto" onClick={() => loadContact(b.id)} disabled={contactLoading === b.id}>
+                            {contactLoading === b.id ? 'Cargando…' : 'Ver contacto'}
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </CardFooter>
+                </Card>
+              )
+            })}
+          </MobileCards>
+          <DesktopOnly>
           <Table>
             <TableHeader $sticky cols="120px 1fr 160px 120px 120px 180px 140px 220px">
               <TableCell><HeaderButton onClick={() => toggleSort('status')}>Estado {renderSort('status')}</HeaderButton></TableCell>
@@ -457,13 +610,9 @@ export default function HostDashboard() {
                   <TableCell>{b.user?.full_name ?? '-'}</TableCell>
                   <TableCell>
                     {b.status === 'confirmed' ? (
-                      contact ? (
-                        <Button title="Oculta datos de contacto" onClick={() => hideContact(b.id)}>Ocultar contacto</Button>
-                      ) : (
-                        <Button title="Muestra datos de contacto" onClick={() => loadContact(b.id)} disabled={contactLoading === b.id}>
-                          {contactLoading === b.id ? 'Cargando…' : 'Ver contacto'}
-                        </Button>
-                      )
+                      <Button title="Muestra datos de contacto" onClick={() => loadContact(b.id)} disabled={contactLoading === b.id}>
+                        {contactLoading === b.id ? 'Cargando…' : 'Ver contacto'}
+                      </Button>
                     ) : (
                       <span style={{ color: '#666' }}>Confirmar para ver contacto</span>
                     )}
@@ -480,20 +629,12 @@ export default function HostDashboard() {
                       </>
                     )}
                     {b.status === 'confirmed' && (
-                      <Button title="Marca como pagado" onClick={() => doMarkPaid(b.id)} disabled={actionLoading?.id === b.id && actionLoading?.type === 'paid'}>
-                        <IconMoney /> {actionLoading?.id === b.id && actionLoading?.type === 'paid' ? 'Marcando…' : 'Marcar pagado'}
+                      <Button title="Confirmar pago" onClick={() => setPaymentModal(b)}>
+                        <IconMoney /> Confirmar pago
                       </Button>
                     )}
                   </TableActions>
                 </TableRow>
-                {contact && !contact.error && (
-                  <ContactCard>
-                    <div style={{ fontWeight: 'bold' }}>Huésped</div>
-                    <div>Nombre: {contact.guest?.name ?? '-'}</div>
-                    <div>Teléfono: {contact.guest?.phone ?? '-'}</div>
-                    <div>Email: {contact.guest?.email ?? '-'}</div>
-                  </ContactCard>
-                )}
                 {contact && contact.error && (
                   <div style={{ marginTop: 6, marginLeft: 8, color: '#b00020' }}>{contact.error}</div>
                 )}
@@ -501,6 +642,7 @@ export default function HostDashboard() {
             )
           })}
           </Table>
+          </DesktopOnly>
           <Toolbar>
             <Button onClick={() => exportHostCSV()}>Exportar CSV</Button>
             <Button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}>Anterior</Button>
@@ -510,6 +652,41 @@ export default function HostDashboard() {
       )}
         </CardContent>
       </Card>
+
+      {contactModal && (
+        <>
+          <ModalBackdrop onClick={() => setContactModal(null)} />
+          <ModalSheet role="dialog" aria-modal="true">
+            <Heading as="h3" level={3}>Contacto del huésped</Heading>
+            {contacts[contactModal] ? (
+              <div style={{ display: 'grid', gap: 8 }}>
+                <div><strong>Nombre:</strong> {contacts[contactModal].guest?.name ?? '-'}</div>
+                <div><strong>Teléfono:</strong> {contacts[contactModal].guest?.phone ?? '-'}</div>
+                <div><strong>Email:</strong> {contacts[contactModal].guest?.email ?? '-'}</div>
+              </div>
+            ) : (
+              <Paragraph>Cargando…</Paragraph>
+            )}
+            <Toolbar>
+              <Button onClick={() => setContactModal(null)}>Cerrar</Button>
+            </Toolbar>
+          </ModalSheet>
+        </>
+      )}
+
+      {paymentModal && (
+        <>
+          <ModalBackdrop onClick={() => setPaymentModal(null)} />
+          <ModalSheet role="dialog" aria-modal="true">
+            <Heading as="h3" level={3}>Confirmar pago</Heading>
+            <Paragraph>Reserva #{paymentModal.id} · ${Number(paymentModal.amount)}</Paragraph>
+            <Toolbar>
+              <Button onClick={() => setPaymentModal(null)}>Cancelar</Button>
+              <Button $variant="primary" onClick={async () => { await doMarkPaid(paymentModal.id); setPaymentModal(null) }}>Confirmar</Button>
+            </Toolbar>
+          </ModalSheet>
+        </>
+      )}
     </Container>
   )
 }

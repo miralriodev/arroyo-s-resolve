@@ -1,4 +1,5 @@
 const prisma = require('../../config/prismaClient');
+const { Prisma } = require('@prisma/client');
 
 exports.search = async (q) => {
   const {
@@ -65,28 +66,44 @@ exports.search = async (q) => {
 };
 
 exports.getById = async (id) => {
-  return prisma.accommodation.findUnique({
+  const acc = await prisma.accommodation.findUnique({
     where: { id },
-    include: {
-      images: true,
-      host: { select: { id: true, full_name: true, avatar_url: true, role: true } },
-    },
+    include: { images: true, host: { select: { id: true, full_name: true, avatar_url: true, role: true } } },
   });
+  if (!acc || !acc.host) return acc;
+  try {
+    const [row] = await prisma.$queryRawUnsafe(`SELECT host_title, host_bio, languages, years_experience, response_rate, response_time, superhost, city, contact_email, phone FROM public.profiles WHERE id = '${acc.host.id}'`);
+    if (row) {
+      acc.host = { ...acc.host, ...row };
+    }
+  } catch (_) {}
+  return acc;
 };
 
 exports.create = async (hostId, payload) => {
+  const price = payload.price !== undefined && payload.price !== null
+    ? new Prisma.Decimal(String(payload.price))
+    : new Prisma.Decimal('0');
+  if (payload.category) {
+    const cat = await prisma.category.findUnique({ where: { key: payload.category } });
+    if (!cat) {
+      const err = new Error('Categoría inválida');
+      err.status = 400;
+      throw err;
+    }
+  }
   return prisma.accommodation.create({
     data: {
-      hostId,
+      host: hostId ? { connect: { id: hostId } } : undefined,
       title: payload.title,
       description: payload.description,
-      price: payload.price,
-      category: payload.category,
+      price,
+      category: payload.category || null,
       location: payload.location,
       image_url: payload.image_url,
       property_type: payload.property_type,
       amenities: Array.isArray(payload.amenities) ? payload.amenities : [],
-      rules: payload.rules,
+      instant_book: payload.instant_book === true,
       max_guests: payload.max_guests || 1,
     },
   });
@@ -95,18 +112,29 @@ exports.create = async (hostId, payload) => {
 exports.update = async (hostId, id, payload) => {
   const acc = await prisma.accommodation.findUnique({ where: { id } });
   if (!acc || acc.hostId !== hostId) throw new Error('No autorizado o no existe');
+  const price = payload.price !== undefined && payload.price !== null
+    ? new Prisma.Decimal(String(payload.price))
+    : undefined;
+  if (payload.category) {
+    const cat = await prisma.category.findUnique({ where: { key: payload.category } });
+    if (!cat) {
+      const err = new Error('Categoría inválida');
+      err.status = 400;
+      throw err;
+    }
+  }
   return prisma.accommodation.update({
     where: { id },
     data: {
       title: payload.title,
       description: payload.description,
-      price: payload.price,
-      category: payload.category,
+      price,
+      category: payload.category || null,
       location: payload.location,
       image_url: payload.image_url,
       property_type: payload.property_type,
       amenities: payload.amenities,
-      rules: payload.rules,
+      instant_book: payload.instant_book === true,
       max_guests: payload.max_guests,
       updated_at: new Date(),
     },

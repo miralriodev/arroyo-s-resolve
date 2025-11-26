@@ -27,6 +27,35 @@ const Wrapper = styled.div`
   gap: ${({ theme }) => theme.spacing(4)};
 `
 
+const DashboardGrid = styled.div`
+  display: grid;
+  gap: ${({ theme }) => theme.spacing(3)};
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+`
+
+const StatCard = styled.div`
+  display: grid;
+  gap: 8px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.radius.md};
+  background: #fff;
+  padding: 14px;
+  text-align: center;
+  min-height: 96px;
+  h3 { font-size: 0.9rem; font-weight: 600; margin: 0; }
+  .value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  @media (max-width: ${({ theme }) => theme.breakpoints.sm}) {
+    .value { font-size: 1.05rem; }
+  }
+`
+
 const ErrorText = styled.p`
   color: #d32f2f;
 `
@@ -338,12 +367,51 @@ export default function Admin() {
         <Heading as="h2" level={2}>Admin</Heading>
         <Paragraph>Panel administrativo: resumen y gestión básica.</Paragraph>
 
-      <div>
-        <h3>Resumen</h3>
-        <div><strong>Usuario:</strong> {user?.email || '-'}</div>
-        <div><strong>Rol:</strong> {role || '-'}</div>
-        <div><strong>API:</strong> {apiHealth?.status || 'desconocido'} {apiHealth?.version ? `(v${apiHealth.version})` : ''}</div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Resumen</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <DashboardGrid>
+            <StatCard>
+              <h3>Usuario</h3>
+              <div className="value" title={user?.email || '-' }>{user?.email || '-'}</div>
+            </StatCard>
+            <StatCard>
+              <h3>Rol</h3>
+              <div className="value">{role || '-'}</div>
+            </StatCard>
+            <StatCard>
+              <h3>API</h3>
+              <div className="value">{apiHealth?.status || 'desconocido'}</div>
+            </StatCard>
+            <StatCard>
+              <h3>Usuarios</h3>
+              <div className="value">{Number.isFinite(usersTotal) ? usersTotal : users.length}</div>
+            </StatCard>
+            <StatCard>
+              <h3>Reservas</h3>
+              <div className="value">{bookings.length}</div>
+            </StatCard>
+            <StatCard>
+              <h3>Pendientes</h3>
+              <div className="value">{bookings.filter(b => b.status === 'pending').length}</div>
+            </StatCard>
+            <StatCard>
+              <h3>Confirmadas</h3>
+              <div className="value">{bookings.filter(b => b.status === 'confirmed').length}</div>
+            </StatCard>
+            <StatCard>
+              <h3>Rechazadas</h3>
+              <div className="value">{bookings.filter(b => b.status === 'rejected').length}</div>
+            </StatCard>
+            <StatCard>
+              <h3>Ingresos</h3>
+              <div className="value">${bookings.filter(b => b.status === 'confirmed').reduce((s, b) => s + Number(b.amount || 0), 0)}</div>
+            </StatCard>
+          </DashboardGrid>
+        </CardContent>
+      </Card>
 
      
 
