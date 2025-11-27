@@ -49,8 +49,11 @@ jobs:
   docker-build-push:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4 
-      - uses: docker/login-action@v3
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -58,11 +61,15 @@ jobs:
       - name: Build and push Backend API
         uses: docker/build-push-action@v5
         with:
-          context: ./backend # Usa el Dockerfile de la carpeta backend
+          context: ./backend
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/arroyo-seco-api:latest
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/arroyo-seco-api:latest
+            ghcr.io/${{ github.repository_owner }}/arroyo-seco-api:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-  # --- TRABAJO 4: DESPLEGAR A VPS (PRÁCTICA) ---
+  # --- TRABAJO 4: DESPLEGAR A VPS (BLUE-GREEN) ---
   deploy-vps:
     needs: docker-build-push
     runs-on: ubuntu-latest
@@ -73,9 +80,9 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "docker-compose.yml" 
+          source: "scripts/deploy_blue_green.sh,nginx/blue.conf,nginx/green.conf,nginx/default.conf"
           target: "/var/www/my-app"
-      - name: Deploy on VPS
+      - name: Deploy Blue-Green
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -88,20 +95,11 @@ jobs:
             echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
             echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> .env
             echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
-
             echo "DIRECT_URL=${{ secrets.SUPABASE_DIRECT_URL }}" >> .env
-            # Log sanitizado: mostrar host:puerto de las URLs (sin credenciales)
-            DB_URL=$(grep -E '^DATABASE_URL=' .env | head -n1 | cut -d'=' -f2 | tr -d '"')
-            DIRECT_URL=$(grep -E '^DIRECT_URL=' .env | head -n1 | cut -d'=' -f2 | tr -d '"')
-            DB_HOST_PORT=$(echo "$DB_URL" | sed -n 's#.*@\([^/]*\)/.*#\1#p')
-            DIRECT_HOST_PORT=$(echo "$DIRECT_URL" | sed -n 's#.*@\([^/]*\)/.*#\1#p')
-            echo "DATABASE_URL host:port -> $DB_HOST_PORT"
-            echo "DIRECT_URL host:port   -> $DIRECT_HOST_PORT"
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            
-            docker pull ghcr.io/${{ github.repository_owner }}/arroyo-seco-api:latest
-            
-            docker run --rm --env-file .env ghcr.io/${{ github.repository_owner }}/arroyo-seco-api:latest sh -c "npx prisma migrate deploy"
-            docker-compose pull
-            docker-compose down
-            docker-compose up -d --remove-orphans
+            chmod +x deploy_blue_green.sh
+            export IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/arroyo-seco-api"
+            export NEW_TAG="${{ github.sha }}"
+            export CONF_SRC_DIR="/var/www/my-app/nginx"
+            export GITHUB_TOKEN="${{ secrets.GITHUB_TOKEN }}"
+            export GITHUB_ACTOR="${{ github.actor }}"
+            ./deploy_blue_green.sh
