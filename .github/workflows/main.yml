@@ -96,10 +96,10 @@ jobs:
             echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> .env
             echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
             echo "DIRECT_URL=${{ secrets.SUPABASE_DIRECT_URL }}" >> .env
-            chmod +x deploy_blue_green.sh
+            chmod +x scripts/deploy_blue_green.sh
             export IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/arroyo-seco-api"
             export NEW_TAG="${{ github.sha }}"
             export CONF_SRC_DIR="/var/www/my-app/nginx"
             export GITHUB_TOKEN="${{ secrets.GITHUB_TOKEN }}"
             export GITHUB_ACTOR="${{ github.actor }}"
-            ./deploy_blue_green.sh
+            ./scripts/deploy_blue_green.sh
