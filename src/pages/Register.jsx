@@ -1,16 +1,16 @@
-import styled from 'styled-components'
 import { useState } from 'react'
-import { useAuth } from '../supabase/AuthContext.jsx'
-import { useProfileSync } from '../hooks/useProfileSync'
-import { useNavigate, Link } from 'react-router-dom'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../components/atoms/Card'
-import Label from '../components/atoms/Label'
-import Input from '../components/atoms/Input'
-import Select from '../components/atoms/Select'
+import { Link, useNavigate } from 'react-router-dom'
+import styled from 'styled-components'
 import Button from '../components/atoms/Button'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/atoms/Card'
 import FormMessage from '../components/atoms/FormMessage'
 import IconCheck from '../components/atoms/IconCheck'
 import IconX from '../components/atoms/IconX'
+import Input from '../components/atoms/Input'
+import Label from '../components/atoms/Label'
+import Select from '../components/atoms/Select'
+import { useProfileSync } from '../hooks/useProfileSync'
+import { useAuth } from '../supabase/AuthContext.jsx'
 
 const Center = styled.main`
   min-height: calc(100vh - 120px);
@@ -70,6 +70,7 @@ export default function Register() {
     setLoading(true)
     try {
       await signUp(email, password)
+      try { localStorage.setItem('pending_role', role) } catch (_) {}
       // Intentar sincronizar el rol elegido (si hay sesión disponible)
       try { await syncProfile({ role }) } catch (_) { /* silencioso */ }
       setInfo('Revisa tu correo para confirmar la cuenta')

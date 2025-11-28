@@ -90,12 +90,13 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /var/www/my-app
-            echo "NODE_ENV=production" > .env
-            echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
-            echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
-            echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> .env
-            echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
-            echo "DIRECT_URL=${{ secrets.SUPABASE_DIRECT_URL }}" >> .env
+            touch .env
+            if grep -q '^NODE_ENV=' .env; then sed -i 's/^NODE_ENV=.*/NODE_ENV=production/' .env; else echo 'NODE_ENV=production' >> .env; fi
+            if grep -q '^SUPABASE_URL=' .env; then sed -i "s/^SUPABASE_URL=.*/SUPABASE_URL=${{ secrets.SUPABASE_URL }}" .env; else echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env; fi
+            if grep -q '^SUPABASE_ANON_KEY=' .env; then sed -i "s/^SUPABASE_ANON_KEY=.*/SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" .env; else echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env; fi
+            if grep -q '^SUPABASE_SERVICE_ROLE_KEY=' .env; then sed -i "s/^SUPABASE_SERVICE_ROLE_KEY=.*/SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" .env; else echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> .env; fi
+            if grep -q '^DATABASE_URL=' .env; then sed -i "s/^DATABASE_URL=.*/DATABASE_URL=${{ secrets.DATABASE_URL }}" .env; else echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env; fi
+            if grep -q '^DIRECT_URL=' .env; then sed -i "s/^DIRECT_URL=.*/DIRECT_URL=${{ secrets.SUPABASE_DIRECT_URL }}" .env; else echo "DIRECT_URL=${{ secrets.SUPABASE_DIRECT_URL }}" >> .env; fi
             chmod +x scripts/deploy_blue_green.sh
             export IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/arroyo-seco-api"
             export NEW_TAG="${{ github.sha }}"
