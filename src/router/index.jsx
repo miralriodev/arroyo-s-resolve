@@ -15,6 +15,7 @@ const Register = lazy(() => import('../pages/Register'))
 const Privacy = lazy(() => import('../pages/Privacy'))
 const DeleteAccount = lazy(() => import('../pages/DeleteAccount'))
 const MyBookings = lazy(() => import('../pages/MyBookings'))
+const ResetPassword = lazy(() => import('../pages/ResetPassword'))
 
 export const router = createBrowserRouter([
   {
@@ -121,6 +122,14 @@ export const router = createBrowserRouter([
             <RequireAuth>
               <MyBookings />
             </RequireAuth>
+          </Suspense>
+        ),
+      },
+      {
+        path: '/cambiar-contraseña',
+        element: (
+          <Suspense fallback={<div>Cargando…</div>}>
+            <ResetPassword />
           </Suspense>
         ),
       },

@@ -56,8 +56,7 @@ export const AuthContextProvider = ({ children }) => {
   const resetPassword = async (email) => {
     if (!email) throw new Error('Ingresa tu email')
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      // Redirige al login después de actualizar la contraseña en Supabase
-      redirectTo: 'https://www.cali-yoo.online/reset-password',
+      redirectTo: 'https://www.cali-yoo.online/cambiar-contraseña',
     })
     if (error) throw error
     return true
