@@ -13,6 +13,7 @@ if [ ! -f "$ENV_FILE" ]; then
   echo "CURRENT_PRODUCTION=green" > "$ENV_FILE"
 fi
 . "$ENV_FILE"
+CURRENT_PRODUCTION=${CURRENT_PRODUCTION:-green}
 if [ "$CURRENT_PRODUCTION" = "blue" ]; then
   INACTIVE_SLOT="green"
   INACTIVE_PORT="3002"
@@ -27,6 +28,11 @@ echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 docker pull "$NEW_IMAGE"
 docker stop "$INACTIVE_SLOT" || true
 docker rm "$INACTIVE_SLOT" || true
+PORT_CID=$(docker ps --format '{{.ID}} {{.Ports}}' | awk "/(0.0.0.0|::):$INACTIVE_PORT->/ {print \$1}" | head -n1)
+if [ -n "$PORT_CID" ]; then
+  docker stop "$PORT_CID" || true
+  docker rm "$PORT_CID" || true
+fi
 docker run -d --name "$INACTIVE_SLOT" -p "$INACTIVE_PORT:3000" --env-file "$ENV_FILE" -e APP_COLOR="$INACTIVE_SLOT" --restart unless-stopped "$NEW_IMAGE"
 sleep 10
 sudo cp "$CONF_SRC_DIR/blue.conf" "$NGINX_CONF_DIR/blue.conf"
