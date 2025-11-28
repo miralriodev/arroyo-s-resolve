@@ -69,8 +69,7 @@ export default function Register() {
     setInfo(null)
     setLoading(true)
     try {
-      await signUp(email, password)
-      try { localStorage.setItem('pending_role', role) } catch (_) {}
+      await signUp(email, password, role)
       // Intentar sincronizar el rol elegido (si hay sesión disponible)
       try { await syncProfile({ role }) } catch (_) { /* silencioso */ }
       setInfo('Revisa tu correo para confirmar la cuenta')

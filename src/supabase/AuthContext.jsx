@@ -38,9 +38,10 @@ export const AuthContextProvider = ({ children }) => {
     return data
   }
 
-  const signUp = async (email, password) => {
+  const signUp = async (email, password, role) => {
     const { data, error } = await supabase.auth.signUp({ email, password, options: {
       emailRedirectTo: 'https://www.cali-yoo.online/login',
+      data: role ? { role } : undefined,
     } })
     if (error) throw error
     // If session is returned (depending on email confirmation settings), sync profile

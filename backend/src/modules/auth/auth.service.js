@@ -47,14 +47,17 @@ async function syncProfile(userId, payload = {}) {
     host_title, host_bio, languages, years_experience, response_rate, response_time, superhost, city } = payload;
 
   let name = full_name;
+  let roleFromMeta = null;
   if (!name) {
     const { data, error } = await supabaseAdmin.auth.admin.getUserById(userId);
     if (!error && data?.user) {
       name = data.user.user_metadata?.full_name || data.user.user_metadata?.name || null;
+      roleFromMeta = data.user.user_metadata?.role || null;
     }
   }
 
-  const profile = await repo.ensureProfile(userId, { full_name: name, avatar_url, role });
+  const finalRole = typeof role !== 'undefined' ? role : roleFromMeta;
+  const profile = await repo.ensureProfile(userId, { full_name: name, avatar_url, role: finalRole });
 
   // Actualizar contacto (columnas fuera del modelo Prisma): crear si no existen y actualizar
   if (
