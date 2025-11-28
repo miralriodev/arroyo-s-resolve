@@ -1,11 +1,16 @@
 const prisma = require('../../config/prismaClient');
 
 async function ensureProfile(userId, { full_name, avatar_url, role } = {}) {
+  const updateData = {}
+  const createData = { id: userId }
+  if (typeof full_name !== 'undefined') { updateData.full_name = full_name; createData.full_name = full_name }
+  if (typeof avatar_url !== 'undefined') { updateData.avatar_url = avatar_url; createData.avatar_url = avatar_url }
+  if (typeof role !== 'undefined') { updateData.role = role; createData.role = role }
   return prisma.profile.upsert({
     where: { id: userId },
-    update: { full_name, avatar_url, role },
-    create: { id: userId, full_name, avatar_url, role },
-  });
+    update: updateData,
+    create: createData,
+  })
 }
 
 async function getProfileById(id) {

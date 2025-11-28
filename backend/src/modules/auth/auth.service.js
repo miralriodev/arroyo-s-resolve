@@ -56,7 +56,7 @@ async function syncProfile(userId, payload = {}) {
     }
   }
 
-  const finalRole = typeof role !== 'undefined' ? role : roleFromMeta;
+  const finalRole = typeof role !== 'undefined' ? role : (roleFromMeta != null ? roleFromMeta : undefined);
   const profile = await repo.ensureProfile(userId, { full_name: name, avatar_url, role: finalRole });
 
   // Actualizar contacto (columnas fuera del modelo Prisma): crear si no existen y actualizar
