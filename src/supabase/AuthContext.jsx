@@ -39,7 +39,9 @@ export const AuthContextProvider = ({ children }) => {
   }
 
   const signUp = async (email, password) => {
-    const { data, error } = await supabase.auth.signUp({ email, password })
+    const { data, error } = await supabase.auth.signUp({ email, password, options: {
+      emailRedirectTo: 'https://www.cali-yoo.online/login',
+    } })
     if (error) throw error
     // If session is returned (depending on email confirmation settings), sync profile
     await syncProfile({ full_name: data?.user?.user_metadata?.full_name })
@@ -55,7 +57,7 @@ export const AuthContextProvider = ({ children }) => {
     if (!email) throw new Error('Ingresa tu email')
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       // Redirige al login después de actualizar la contraseña en Supabase
-      redirectTo: `${window.location.origin}/login`,
+      redirectTo: 'https://www.cali-yoo.online/reset-password',
     })
     if (error) throw error
     return true

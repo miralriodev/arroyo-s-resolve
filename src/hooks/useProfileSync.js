@@ -12,12 +12,18 @@ export function useProfileSync() {
       const userId = user?.id
       if (!token || !userId) return null
       try {
+        let pendingRole = null
+        try { pendingRole = localStorage.getItem('pending_role') } catch (_) {}
         const payload = {
           full_name: user?.user_metadata?.full_name,
+          ...(pendingRole ? { role: pendingRole } : {}),
           ...override,
         }
         const profile = await syncProfileRequest(token, payload)
         syncedUserId.current = userId
+        if (pendingRole) {
+          try { localStorage.removeItem('pending_role') } catch (_) {}
+        }
         return profile
       } catch (err) {
         console.error('syncProfile error:', err)
