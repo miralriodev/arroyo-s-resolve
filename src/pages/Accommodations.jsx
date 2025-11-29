@@ -143,7 +143,7 @@ export default function Accommodations() {
             .map((acc) => (
             <ServiceCard
               key={acc.id}
-              image={acc.image_url || '/vite.svg'}
+              image={(Array.isArray(acc.images) && acc.images.length > 0 ? acc.images[0].url : acc.image_url) || '/vite.svg'}
               title={acc.title}
               price={Number(acc.price) || 0}
               rating={acc.rating ?? 0}
