@@ -21,6 +21,7 @@ import Textarea from '../components/atoms/Textarea'
 import Toolbar from '../components/atoms/Toolbar'
 import { FieldLabel, FieldPill, FieldRow, RightIcon } from '../components/molecules/PillFields'
 import { useAuth } from '../supabase/AuthContext'
+import { supabase } from '../supabase/supabase.config.jsx'
 
 const HeaderButton = styled.button`
   display: inline-flex;
@@ -98,7 +99,7 @@ const StatCard = styled.div`
 export default function HostDashboard() {
   const { session, user } = useAuth()
   const token = session?.access_token
-  const [form, setForm] = useState({ title: '', description: '', price: 0, location: '', image_url: '', property_type: '', amenities: '', rules: '', max_guests: 1, instant_book: false, address: '', category: 'city' })
+  const [form, setForm] = useState({ title: '', description: '', price: 0, location: '', image_files: [], property_type: '', amenities: '', rules: '', max_guests: 1, instant_book: false, address: '', category: 'city' })
   const [availability, setAvail] = useState({ accommodationId: '', date: '', capacity: 1 })
   const [status, setStatus] = useState(null)
 
@@ -235,13 +236,23 @@ export default function HostDashboard() {
   const createAcc = async () => {
     setStatus('Creando…')
     try {
+      const urls = []
+      for (const file of (form.image_files || [])) {
+        const ext = file.name.split('.').pop()
+        const key = `accommodations/${user?.id || 'anon'}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+        const { error: upErr } = await supabase.storage.from('service-images').upload(key, file, { upsert: true })
+        if (upErr) throw new Error(upErr.message || 'No se pudo subir la imagen')
+        const { data } = supabase.storage.from('service-images').getPublicUrl(key)
+        if (data?.publicUrl) urls.push(data.publicUrl)
+      }
       const payload = {
         title: form.title,
         description: form.description,
         price: Number(form.price),
         category: form.category,
         location: form.location,
-        image_url: form.image_url,
+        image_url: urls[0],
+        images: urls,
         property_type: form.property_type,
         amenities: form.amenities ? form.amenities.split(',').map(s => s.trim()).filter(Boolean) : [],
         max_guests: Number(form.max_guests),
@@ -250,6 +261,7 @@ export default function HostDashboard() {
       }
       const acc = await createAccommodation(token, payload)
       setStatus(`Creado: ${acc.id}`)
+      setForm({ title: '', description: '', price: 0, location: '', image_files: [], property_type: '', amenities: '', rules: '', max_guests: 1, instant_book: false, address: '', category: 'city' })
     } catch (e) {
       setStatus(e?.message || 'Error creando alojamiento')
     }
@@ -375,8 +387,16 @@ export default function HostDashboard() {
               <Input placeholder="Servicios (csv)" value={form.amenities} onChange={(e) => setForm({ ...form, amenities: e.target.value })} />
             </Label>
             <Label>
-              Foto (URL)
-              <Input placeholder="Foto (URL)" value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} />
+              Subir imagen
+              <input type="file" accept="image/*" multiple onChange={(e) => setForm({ ...form, image_files: Array.from(e.target.files || []) })} />
+              <small style={{ color: '#6b7280' }}>Seleccionadas: {form.image_files?.length || 0}</small>
+              {form.image_files?.length > 0 && (
+                <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', marginTop: 8 }}>
+                  {form.image_files.map((f, i) => (
+                    <img key={i} src={URL.createObjectURL(f)} alt={f.name} style={{ width: '100%', height: 80, objectFit: 'cover', borderRadius: 8, border: '1px solid #e5e7eb' }} />
+                  ))}
+                </div>
+              )}
             </Label>
             <Label>
               Descripción

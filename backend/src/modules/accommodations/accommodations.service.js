@@ -92,7 +92,7 @@ exports.create = async (hostId, payload) => {
       throw err;
     }
   }
-  return prisma.accommodation.create({
+  const created = await prisma.accommodation.create({
     data: {
       host: hostId ? { connect: { id: hostId } } : undefined,
       title: payload.title,
@@ -107,6 +107,11 @@ exports.create = async (hostId, payload) => {
       max_guests: payload.max_guests || 1,
     },
   });
+  if (Array.isArray(payload.images) && payload.images.length) {
+    const items = payload.images.map((url, idx) => ({ accommodationId: created.id, url, sort_order: idx }))
+    await prisma.accommodationImage.createMany({ data: items })
+  }
+  return prisma.accommodation.findUnique({ where: { id: created.id }, include: { images: true } })
 };
 
 exports.update = async (hostId, id, payload) => {

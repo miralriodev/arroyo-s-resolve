@@ -20,6 +20,7 @@ export default function AccommodationDetail() {
   const { id } = useParams()
   const { session } = useAuth()
   const [acc, setAcc] = useState(null)
+  const [activeImg, setActiveImg] = useState(0)
   const [reviews, setReviews] = useState([])
   const [form, setForm] = useState({ start_date: '', end_date: '', guests: 1 })
   const [loading, setLoading] = useState(true)
@@ -215,8 +216,19 @@ export default function AccommodationDetail() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {acc.image_url && (
-            <Image src={acc.image_url} alt={acc.title} />
+          {(() => {
+            const imgs = Array.isArray(acc.images) ? acc.images : []
+            const url = imgs.length > 0 ? imgs[Math.min(activeImg, imgs.length - 1)].url : acc.image_url
+            return url ? <Image src={url} alt={acc.title} /> : null
+          })()}
+          {Array.isArray(acc.images) && acc.images.length > 1 && (
+            <div style={{ display: 'flex', gap: 8, marginTop: 8, overflowX: 'auto' }}>
+              {acc.images.map((im, idx) => (
+                <button key={idx} onClick={() => setActiveImg(idx)} aria-label={`Imagen ${idx+1}`} style={{ padding: 0, border: activeImg===idx ? '2px solid #111' : '1px solid #e5e7eb', borderRadius: 8, background: '#fff' }}>
+                  <img src={im.url} alt={`mini ${idx+1}`} style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 8 }} />
+                </button>
+              ))}
+            </div>
           )}
           {acc.description && (
             <p>{acc.description}</p>
