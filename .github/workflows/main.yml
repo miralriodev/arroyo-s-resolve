@@ -42,8 +42,9 @@ jobs:
         with:
           name: ${{ needs.build.outputs.artifact_name }}
           path: ./dist
-      - run: aws s3 sync ./dist s3://cali-yoo --delete
-      - run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_ID }} --paths "/*"
+      - run: aws s3 sync ./dist/assets s3://cali-yoo/assets --exact-timestamps
+      - run: aws s3 cp ./dist/index.html s3://cali-yoo/index.html --metadata-directive REPLACE --cache-control "no-cache" --content-type "text/html"
+      - run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_ID }} --paths "/index.html"
 
   # --- TRABAJO 3: CONSTRUIR IMAGEN DOCKER (PARA VPS) ---
   docker-build-push:
