@@ -21,7 +21,8 @@ export const FieldPill = styled.label`
   transition: all 100ms ease-in-out;
   &:focus-within {
     border-color: #fb8500;
-    box-shadow: 0 0 0 3px #fb850020;
+    border-width: 1.5px;
+    box-shadow: 0 0 8px 0 #fb850040;
   }
 `
 
@@ -37,7 +38,8 @@ export const PillGroup = styled.div`
   transition: all 100ms ease-in-out;
   &:focus-within {
     border-color: #fb8500;
-    box-shadow: 0 0 0 3px #fb850020;
+    border-width: 1.5px;
+    box-shadow: 0 0 8px 0 #fb850040;
   }
   @media (max-width: ${({ theme }) => theme.breakpoints.md}) {
     grid-template-columns: 1fr;
