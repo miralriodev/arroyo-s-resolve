@@ -14,6 +14,7 @@ app.use(express.json())
 app.use(morgan('dev'))
 
 app.use('/api/v1', v1Routes)
+console.log('Routes loaded successfully.')
 
 // Serializador JSON: convierte BigInt a string para evitar errores
 app.set('json replacer', (key, value) => {
