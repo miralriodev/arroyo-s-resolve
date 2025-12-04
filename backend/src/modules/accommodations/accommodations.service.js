@@ -2,6 +2,7 @@ import prisma from '../../config/prismaClient.js';
 import { Prisma } from '@prisma/client';
 
 export const search = async (q) => {
+  // This function performs a search for accommodations based on the provided query parameters.
   const {
     location,
     minPrice,
