@@ -16,13 +16,15 @@ const Wrapper = styled.div`
 `
 
 const Hero = styled.section`
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: ${({ theme }) => theme.radius.md};
-  padding: ${({ theme }) => theme.spacing(5)};
-  background: #fff;
-  box-shadow: none;
+  border-radius: ${({ theme }) => theme.radius.lg};
+  padding: ${({ theme }) => theme.spacing(10)} ${({ theme }) => theme.spacing(5)};
+  background: linear-gradient(45deg, ${({ theme }) => theme.colors.primary}, ${({ theme }) => theme.colors.primaryDark});
+  color: ${({ theme }) => theme.colors.textLight};
   display: grid;
   gap: ${({ theme }) => theme.spacing(2)};
+  h2 {
+    color: ${({ theme }) => theme.colors.textLight};
+  }
 `
 
 const FiltersRow = styled.div`
@@ -133,8 +135,8 @@ export default function Accommodations() {
       </FiltersRowTop>
 
       
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <Button $variant="outline" onClick={fetch}>Buscar</Button>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+        <Button $variant="primary" onClick={fetch}>Buscar</Button>
       </div>
       {loading ? <p>Cargando…</p> : (
         <Grid>

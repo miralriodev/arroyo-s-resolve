@@ -2,16 +2,16 @@ import styled from 'styled-components'
 import { Link } from 'react-router-dom'
 
 const Card = styled.article`
-  background: #fff;
-  border: 1px solid transparent;
+  background: ${({ theme }) => theme.colors.surface};
+  border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: ${({ theme }) => theme.radius.lg};
   box-shadow: ${({ theme }) => theme.shadow.sm};
   overflow: hidden;
-  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out, border-color 0.2s ease-in-out;
   &:hover {
-    transform: translateY(-1px);
+    transform: translateY(-2px);
     box-shadow: ${({ theme }) => theme.shadow.md};
-    border-color: ${({ theme }) => theme.colors.border};
+    border-color: ${({ theme }) => theme.colors.primary};
   }
 `
 
