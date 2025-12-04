@@ -1,5 +1,5 @@
-const jwt = require('jsonwebtoken')
-const prisma = require('../config/prismaClient')
+import jwt from 'jsonwebtoken';
+import prisma from '../config/prismaClient.js';
 
 /**
  * Autenticación basada en Supabase JWT.
@@ -8,7 +8,7 @@ const prisma = require('../config/prismaClient')
  * - Busca el perfil en la BD para obtener `role`.
  * - Adjunta `req.user = { id, role }`.
  */
-module.exports = async function requireAuth(req, res, next) {
+export default async function requireAuth(req, res, next) {
   try {
     const auth = req.headers.authorization || ''
     const token = auth.startsWith('Bearer ') ? auth.slice(7) : null

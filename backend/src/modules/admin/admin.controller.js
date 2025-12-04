@@ -1,7 +1,7 @@
-const bookingsService = require('../bookings/bookings.service');
-const prisma = require('../../config/prismaClient');
+import * as bookingsService from '../bookings/bookings.service.js';
+import prisma from '../../config/prismaClient.js';
 
-exports.listAllBookings = async (req, res, next) => {
+export const listAllBookings = async (req, res, next) => {
   try {
     const bookings = await bookingsService.listAllBookings(req.query);
     if (req.query.page || req.query.pageSize) {
@@ -14,7 +14,7 @@ exports.listAllBookings = async (req, res, next) => {
   } catch (e) { next(e); }
 };
 
-exports.getBookingById = async (req, res, next) => {
+export const getBookingById = async (req, res, next) => {
   try {
     const booking = await bookingsService.adminGetBooking(Number(req.params.id));
     if (!booking) return res.status(404).json({ error: 'No encontrado' });
@@ -22,21 +22,73 @@ exports.getBookingById = async (req, res, next) => {
   } catch (e) { next(e); }
 };
 
-exports.updateBooking = async (req, res, next) => {
+export const listAllUsers = async (req, res, next) => {
+  try {
+    const users = await prisma.user.findMany();
+    res.json(users);
+  } catch (e) { next(e); }
+};
+
+export const listAllAccommodations = async (req, res, next) => {
+  try {
+    const accommodations = await prisma.accommodation.findMany();
+    res.json(accommodations);
+  } catch (e) { next(e); }
+};
+
+export const getAccommodationById = async (req, res, next) => {
+  try {
+    const accommodation = await prisma.accommodation.findUnique({
+      where: { id: Number(req.params.id) },
+      include: {
+        owner: true,
+        bookings: true,
+        availability: true,
+        reviews: true,
+      },
+    });
+    if (!accommodation) return res.status(404).json({ error: 'No encontrado' });
+    res.json(accommodation);
+  } catch (e) { next(e); }
+};
+
+export const listAllReviews = async (req, res, next) => {
+  try {
+    const reviews = await prisma.review.findMany();
+    res.json(reviews);
+  } catch (e) { next(e); }
+};
+
+export const getReviewById = async (req, res, next) => {
+  try {
+    const review = await prisma.review.findUnique({
+      where: { id: Number(req.params.id) },
+      include: {
+        booking: true,
+        author: true,
+        host: true,
+      },
+    });
+    if (!review) return res.status(404).json({ error: 'No encontrado' });
+    res.json(review);
+  } catch (e) { next(e); }
+};
+
+export const updateBooking = async (req, res, next) => {
   try {
     const updated = await bookingsService.adminUpdateBooking(Number(req.params.id), req.body || {});
     res.json(updated);
   } catch (e) { next(e); }
 };
 
-exports.updateBookingStatus = async (req, res, next) => {
+export const updateBookingStatus = async (req, res, next) => {
   try {
     const updated = await bookingsService.adminSetStatus(Number(req.params.id), req.body?.status);
     res.json(updated);
   } catch (e) { next(e); }
 };
 
-exports.updateBookingPayment = async (req, res, next) => {
+export const updateBookingPayment = async (req, res, next) => {
   try {
     const updated = await bookingsService.adminMarkPaid(Number(req.params.id), req.body?.paid);
     res.json(updated);
@@ -44,7 +96,7 @@ exports.updateBookingPayment = async (req, res, next) => {
 };
 
 // Usuarios: listado y cambio de rol
-exports.listUsers = async (req, res, next) => {
+export const listUsers = async (req, res, next) => {
   try {
     const q = req.query?.q?.trim();
     const role = req.query?.role;
@@ -77,7 +129,7 @@ exports.listUsers = async (req, res, next) => {
   } catch (e) { next(e); }
 };
 
-exports.updateUserRole = async (req, res, next) => {
+export const updateUserRole = async (req, res, next) => {
   try {
     const id = req.params.id;
     const role = req.body?.role;

@@ -1,6 +1,6 @@
-const usersService = require('./users.service');
+import * as usersService from './users.service.js';
 
-async function me(req, res) {
+export async function me(req, res) {
   try {
     const user = await usersService.getMe(req.user?.id);
     return res.status(200).json({ user });
@@ -8,5 +8,3 @@ async function me(req, res) {
     return res.status(404).json({ error: err.message });
   }
 }
-
-module.exports = { me };

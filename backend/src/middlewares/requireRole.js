@@ -1,4 +1,4 @@
-function requireRole(allowed = []) {
+export default function requireRole(allowed = []) {
   return (req, res, next) => {
     const role = req.user?.role;
     if (!role || !allowed.includes(role)) {
@@ -7,5 +7,3 @@ function requireRole(allowed = []) {
     next();
   };
 }
-
-module.exports = requireRole;

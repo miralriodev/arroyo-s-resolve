@@ -1,8 +1,8 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const requireAuth = require('../../middlewares/requireAuth');
-const requireRole = require('../../middlewares/requireRole');
-const controller = require('./bookings.controller');
+import requireAuth from '../../middlewares/requireAuth.js';
+import requireRole from '../../middlewares/requireRole.js';
+import * as controller from './bookings.controller.js';
 
 router.post('/', requireAuth, controller.requestBooking);
 router.post('/:id/confirm', requireAuth, requireRole(['host', 'admin']), controller.confirmBooking);
@@ -16,4 +16,4 @@ router.get('/', requireAuth, controller.listMine);
 // Listar reservas de alojamientos del anfitrión
 router.get('/host', requireAuth, requireRole(['host', 'admin']), controller.listHost);
 
-module.exports = router;
+export default router;

@@ -1,8 +1,8 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const requireAuth = require('../../middlewares/requireAuth');
-const requireRole = require('../../middlewares/requireRole');
-const controller = require('./admin.controller');
+import requireAuth from '../../middlewares/requireAuth.js';
+import requireRole from '../../middlewares/requireRole.js';
+import * as controller from './admin.controller.js';
 
 // Listar todas las reservas (admin)
 router.get('/bookings', requireAuth, requireRole(['admin']), controller.listAllBookings);
@@ -17,4 +17,4 @@ router.patch('/bookings/:id/payment', requireAuth, requireRole(['admin']), contr
 router.get('/users', requireAuth, requireRole(['admin']), controller.listUsers);
 router.patch('/users/:id/role', requireAuth, requireRole(['admin']), controller.updateUserRole);
 
-module.exports = router;
+export default router;

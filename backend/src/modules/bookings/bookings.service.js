@@ -1,6 +1,6 @@
-const prisma = require('../../config/prismaClient');
-const { Prisma } = require('@prisma/client');
-const { ensureProfile } = require('../auth/auth.repository');
+import prisma from '../../config/prismaClient.js';
+import { Prisma } from '@prisma/client';
+import { ensureProfile } from '../auth/auth.repository.js';
 
 async function ensureCapacity(accommodationId, start, end, guests) {
   const dayMs = 86400000;
@@ -25,7 +25,7 @@ async function consumeCapacity(accommodationId, start, end, guests) {
   }
 }
 
-exports.requestBooking = async (userId, body) => {
+export const requestBooking = async (userId, body) => {
   // Validación de entrada
   const acc = await prisma.accommodation.findUnique({ where: { id: Number(body.accommodationId) } });
   if (!acc) {
@@ -105,7 +105,7 @@ exports.requestBooking = async (userId, body) => {
   });
 };
 
-exports.confirmBooking = async (hostId, bookingId) => {
+export const confirmBooking = async (hostId, bookingId) => {
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
     include: { accommodation: true },
@@ -135,7 +135,7 @@ exports.confirmBooking = async (hostId, bookingId) => {
   });
 };
 
-exports.rejectBooking = async (hostId, bookingId) => {
+export const rejectBooking = async (hostId, bookingId) => {
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
     include: { accommodation: true },
@@ -162,7 +162,7 @@ exports.rejectBooking = async (hostId, bookingId) => {
   });
 };
 
-exports.markPaid = async (hostId, bookingId) => {
+export const markPaid = async (hostId, bookingId) => {
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
     include: { accommodation: true },
@@ -192,7 +192,7 @@ exports.markPaid = async (hostId, bookingId) => {
   });
 };
 
-exports.getContact = async (userId, bookingId) => {
+export const getContact = async (userId, bookingId) => {
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
     include: { accommodation: { include: { host: true } }, user: true },
@@ -230,7 +230,7 @@ exports.getContact = async (userId, bookingId) => {
 };
 
 // Lista de reservas del usuario autenticado (con filtros y paginación)
-exports.listMyBookings = async (userId, q = {}) => {
+export const listMyBookings = async (userId, q = {}) => {
   if (!userId) {
     const err = new Error('No autenticado');
     err.status = 401;
@@ -251,7 +251,7 @@ exports.listMyBookings = async (userId, q = {}) => {
   });
 };
 
-exports.countMyBookings = async (userId, q = {}) => {
+export const countMyBookings = async (userId, q = {}) => {
   if (!userId) {
     const err = new Error('No autenticado');
     err.status = 401;
@@ -263,7 +263,7 @@ exports.countMyBookings = async (userId, q = {}) => {
 };
 
 // Lista de reservas para alojamientos del anfitrión
-exports.listHostBookings = async (hostId, q = {}) => {
+export const listHostBookings = async (hostId, q = {}) => {
   if (!hostId) {
     const err = new Error('No autenticado');
     err.status = 401;
@@ -287,7 +287,7 @@ exports.listHostBookings = async (hostId, q = {}) => {
   });
 };
 
-exports.countHostBookings = async (hostId, q = {}) => {
+export const countHostBookings = async (hostId, q = {}) => {
   if (!hostId) {
     const err = new Error('No autenticado');
     err.status = 401;
@@ -304,7 +304,7 @@ exports.countHostBookings = async (hostId, q = {}) => {
 };
 
 // Lista de reservas para administración (todas)
-exports.listAllBookings = async (q = {}) => {
+export const listAllBookings = async (q = {}) => {
   const where = {};
   if (q.status) where.status = q.status;
   const page = Number(q.page) > 0 ? Number(q.page) : undefined;
@@ -320,14 +320,14 @@ exports.listAllBookings = async (q = {}) => {
   });
 };
 
-exports.countAllBookings = async (q = {}) => {
+export const countAllBookings = async (q = {}) => {
   const where = {};
   if (q.status) where.status = q.status;
   return prisma.booking.count({ where });
 };
 
 // Admin: obtener reserva por ID con relaciones
-exports.adminGetBooking = async (id) => {
+export const adminGetBooking = async (id) => {
   return prisma.booking.findUnique({
     where: { id },
     include: { accommodation: { include: { host: true } }, user: true },
@@ -335,7 +335,7 @@ exports.adminGetBooking = async (id) => {
 };
 
 // Admin: actualizar campos editables (restricción: no editar fechas/huéspedes si está confirmada)
-exports.adminUpdateBooking = async (id, payload = {}) => {
+export const adminUpdateBooking = async (id, payload = {}) => {
   const booking = await prisma.booking.findUnique({ where: { id } });
   if (!booking) {
     const err = new Error('Reserva no encontrada');
@@ -387,7 +387,7 @@ exports.adminUpdateBooking = async (id, payload = {}) => {
 };
 
 // Admin: cambiar estado (solo transiciones desde pending)
-exports.adminSetStatus = async (id, status) => {
+export const adminSetStatus = async (id, status) => {
   if (!['pending', 'confirmed', 'rejected'].includes(status)) {
     const err = new Error('Estado inválido');
     err.status = 400;
@@ -423,7 +423,7 @@ exports.adminSetStatus = async (id, status) => {
 };
 
 // Admin: marcar pago
-exports.adminMarkPaid = async (id, paid) => {
+export const adminMarkPaid = async (id, paid) => {
   const booking = await prisma.booking.findUnique({ where: { id } });
   if (!booking) {
     const err = new Error('Reserva no encontrada');

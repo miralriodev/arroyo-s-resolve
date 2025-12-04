@@ -1,8 +1,8 @@
-const { supabase, supabaseAdmin } = require('../../config/supabase');
-const repo = require('./auth.repository');
-const prisma = require('../../config/prismaClient');
+import { supabase, supabaseAdmin } from '../../config/supabase.js';
+import * as repo from './auth.repository.js';
+import prisma from '../../config/prismaClient.js';
 
-async function register(userData) {
+export async function register(userData) {
   const { email, password, name, full_name, avatar_url } = userData || {};
   const displayName = full_name || name;
   if (!email || !password || !displayName) {
@@ -23,7 +23,7 @@ async function register(userData) {
   return { user: { id: user.id, email: user.email }, profile };
 }
 
-async function login(credentials) {
+export async function login(credentials) {
   const { email, password } = credentials || {};
   if (!email || !password) {
     throw new Error('Credenciales incompletas');
@@ -38,10 +38,8 @@ async function login(credentials) {
   return { token: session.access_token, user: { id: user.id, email: user.email } };
 }
 
-module.exports = { register, login };
-
 // Sincronización de perfil posterior a signup/login
-async function syncProfile(userId, payload = {}) {
+export async function syncProfile(userId, payload = {}) {
   try {
     if (!userId) throw new Error('No autenticado');
     const { full_name, avatar_url, role, contact_email, phone,
@@ -119,10 +117,8 @@ async function syncProfile(userId, payload = {}) {
   }
 }
 
-module.exports.syncProfile = syncProfile;
-
 // Eliminación de cuenta: borra el usuario en Supabase y limpia datos derivados
-async function deleteAccount(userId) {
+export async function deleteAccount(userId) {
   if (!userId) throw new Error('No autenticado');
 
   // 1) Eliminar el usuario en Supabase (requiere SERVICE_ROLE)
@@ -140,5 +136,3 @@ async function deleteAccount(userId) {
   // 3) Opcional: otras limpiezas (reviews, mensajes) se manejan por reglas de FK
   return true;
 }
-
-module.exports.deleteAccount = deleteAccount;

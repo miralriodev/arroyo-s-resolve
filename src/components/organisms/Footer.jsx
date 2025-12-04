@@ -3,9 +3,8 @@ import styled from 'styled-components'
 const Wrapper = styled.footer`
   margin-top: auto;
   padding: ${({ theme }) => theme.spacing(6)};
-  background: ${({ theme }) => theme.colors.surface};
-  border-top: 1px solid ${({ theme }) => theme.colors.border};
-  color: ${({ theme }) => theme.colors.muted};
+  background: #fb8500;
+  color: white;
   text-align: center;
 `
 

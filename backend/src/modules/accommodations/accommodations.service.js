@@ -1,7 +1,7 @@
-const prisma = require('../../config/prismaClient');
-const { Prisma } = require('@prisma/client');
+import prisma from '../../config/prismaClient.js';
+import { Prisma } from '@prisma/client';
 
-exports.search = async (q) => {
+export const search = async (q) => {
   const {
     location,
     minPrice,
@@ -65,7 +65,7 @@ exports.search = async (q) => {
   return accommodations;
 };
 
-exports.getById = async (id) => {
+export const getById = async (id) => {
   const acc = await prisma.accommodation.findUnique({
     where: { id },
     include: { images: true, host: { select: { id: true, full_name: true, avatar_url: true, role: true } } },
@@ -80,7 +80,7 @@ exports.getById = async (id) => {
   return acc;
 };
 
-exports.create = async (hostId, payload) => {
+export const create = async (hostId, payload) => {
   const price = payload.price !== undefined && payload.price !== null
     ? new Prisma.Decimal(String(payload.price))
     : new Prisma.Decimal('0');
@@ -114,7 +114,7 @@ exports.create = async (hostId, payload) => {
   return prisma.accommodation.findUnique({ where: { id: created.id }, include: { images: true } })
 };
 
-exports.update = async (hostId, id, payload) => {
+export const update = async (hostId, id, payload) => {
   const acc = await prisma.accommodation.findUnique({ where: { id } });
   if (!acc || acc.hostId !== hostId) throw new Error('No autorizado o no existe');
   const price = payload.price !== undefined && payload.price !== null
@@ -146,7 +146,7 @@ exports.update = async (hostId, id, payload) => {
   });
 };
 
-exports.getAvailability = async (id, q) => {
+export const getAvailability = async (id, q) => {
   const { startDate, endDate } = q;
   const where = { accommodationId: id };
   if (startDate && endDate) {
@@ -158,7 +158,7 @@ exports.getAvailability = async (id, q) => {
   });
 };
 
-exports.setAvailability = async (hostId, id, body) => {
+export const setAvailability = async (hostId, id, body) => {
   const acc = await prisma.accommodation.findUnique({ where: { id } });
   if (!acc || acc.hostId !== hostId) throw new Error('No autorizado o no existe');
 

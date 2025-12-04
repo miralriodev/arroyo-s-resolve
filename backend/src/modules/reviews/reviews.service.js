@@ -1,4 +1,4 @@
-const prisma = require('../../config/prismaClient');
+import prisma from '../../config/prismaClient.js';
 
 async function getOrCreatePair(bookingId) {
   let pair = await prisma.reviewPair.findUnique({ where: { bookingId } });
@@ -27,7 +27,7 @@ function maybeRelease(pair) {
   return pair;
 }
 
-exports.submitGuest = async (userId, bookingId, body) => {
+export const submitGuest = async (userId, bookingId, body) => {
   const pair = await getOrCreatePair(bookingId);
   if (pair.guest_user_id !== userId) throw new Error('No autorizado');
   const updated = await prisma.reviewPair.update({
@@ -45,7 +45,7 @@ exports.submitGuest = async (userId, bookingId, body) => {
   return updated;
 };
 
-exports.submitHost = async (hostId, bookingId, body) => {
+export const submitHost = async (hostId, bookingId, body) => {
   const pair = await getOrCreatePair(bookingId);
   if (pair.host_user_id !== hostId) throw new Error('No autorizado');
   const updated = await prisma.reviewPair.update({
@@ -63,7 +63,7 @@ exports.submitHost = async (hostId, bookingId, body) => {
   return updated;
 };
 
-exports.listReleasedByAccommodation = async (accommodationId) => {
+export const listReleasedByAccommodation = async (accommodationId) => {
   return prisma.reviewPair.findMany({
     where: { accommodationId, released_at: { not: null } },
     orderBy: { created_at: 'desc' },

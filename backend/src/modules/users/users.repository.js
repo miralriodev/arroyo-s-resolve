@@ -1,7 +1,5 @@
-const prisma = require('../../config/prismaClient');
+import prisma from '../../config/prismaClient.js';
 
-async function getUserById(id) {
+export async function getUserById(id) {
   return prisma.user.findUnique({ where: { id } });
 }
-
-module.exports = { getUserById };

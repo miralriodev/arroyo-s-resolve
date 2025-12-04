@@ -1,11 +1,11 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const requireAuth = require('../../middlewares/requireAuth');
-const requireRole = require('../../middlewares/requireRole');
-const controller = require('./reviews.controller');
+import requireAuth from '../../middlewares/requireAuth.js';
+import requireRole from '../../middlewares/requireRole.js';
+import * as controller from './reviews.controller.js';
 
 router.post('/:bookingId/guest', requireAuth, controller.submitGuest);
 router.post('/:bookingId/host', requireAuth, requireRole(['host', 'admin']), controller.submitHost);
 router.get('/accommodation/:id', controller.listReleasedByAccommodation);
 
-module.exports = router;
+export default router;

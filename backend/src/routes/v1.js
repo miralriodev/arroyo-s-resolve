@@ -1,29 +1,24 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
 
 // Rutas de módulos
-const authRoutes = require('../modules/auth/auth.routes');
+import authRoutes from '../modules/auth/auth.routes.js';
 router.use('/auth', authRoutes);
 
-const usersRoutes = require('../modules/users/users.routes');
+import usersRoutes from '../modules/users/users.routes.js';
 router.use('/users', usersRoutes);
 
-const accommodationsRoutes = require('../modules/accommodations/accommodations.routes');
+import accommodationsRoutes from '../modules/accommodations/accommodations.routes.js';
 router.use('/accommodations', accommodationsRoutes);
 
-const bookingsRoutes = require('../modules/bookings/bookings.routes');
+import bookingsRoutes from '../modules/bookings/bookings.routes.js';
 router.use('/bookings', bookingsRoutes);
 
-const reviewsRoutes = require('../modules/reviews/reviews.routes');
+import reviewsRoutes from '../modules/reviews/reviews.routes.js';
 router.use('/reviews', reviewsRoutes);
 
 // Rutas administrativas
-const adminRoutes = require('../modules/admin/admin.routes');
+import adminRoutes from '../modules/admin/admin.routes.js';
 router.use('/admin', adminRoutes);
 
-// Salud del API
-router.get('/health', (req, res) => {
-  res.json({ status: 'ok', version: 'v1' });
-});
-
-module.exports = router;
+export default router;

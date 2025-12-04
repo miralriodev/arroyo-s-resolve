@@ -1,6 +1,6 @@
-const prisma = require('../../config/prismaClient');
+import prisma from '../../config/prismaClient.js';
 
-async function ensureProfile(userId, { full_name, avatar_url, role } = {}) {
+export async function ensureProfile(userId, { full_name, avatar_url, role } = {}) {
   const updateData = {}
   const createData = { id: userId }
   if (typeof full_name !== 'undefined') { updateData.full_name = full_name; createData.full_name = full_name }
@@ -13,11 +13,6 @@ async function ensureProfile(userId, { full_name, avatar_url, role } = {}) {
   })
 }
 
-async function getProfileById(id) {
+export async function getProfileById(id) {
   return prisma.profile.findUnique({ where: { id } });
 }
-
-module.exports = {
-  ensureProfile,
-  getProfileById,
-};

@@ -1,9 +1,10 @@
-require('dotenv').config()
-const express = require('express')
-const cors = require('cors')
-const helmet = require('helmet')
-const morgan = require('morgan')
-const errorHandler = require('./middlewares/errorHandler')
+import 'dotenv/config'
+import express from 'express'
+import cors from 'cors'
+import helmet from 'helmet'
+import morgan from 'morgan'
+import errorHandler from './middlewares/errorHandler.js'
+import v1Routes from './routes/v1.js'
 
 const app = express()
 
@@ -12,6 +13,8 @@ app.use(cors())
 app.use(express.json())
 app.use(morgan('dev'))
 
+app.use('/api/v1', v1Routes)
+
 // Serializador JSON: convierte BigInt a string para evitar errores
 app.set('json replacer', (key, value) => {
   return typeof value === 'bigint' ? value.toString() : value
@@ -19,10 +22,6 @@ app.set('json replacer', (key, value) => {
 
 // Salud básica
 app.get('/health', (req, res) => res.json({ status: 'ok' }))
-
-// API v1
-const v1 = require('./routes/v1')
-app.use('/api/v1', v1)
 
 // Manejo de errores
 app.use(errorHandler)

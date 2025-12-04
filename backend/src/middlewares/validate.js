@@ -1,6 +1,6 @@
-const { checkSchema, validationResult } = require('express-validator');
+import { checkSchema, validationResult } from 'express-validator';
 
-function validate(schema) {
+export function validate(schema) {
   const validations = checkSchema(schema, ['body']);
   const handler = (req, res, next) => {
     const result = validationResult(req);
@@ -11,5 +11,3 @@ function validate(schema) {
   };
   return [...validations, handler];
 }
-
-module.exports = { validate };
