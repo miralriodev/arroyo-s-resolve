@@ -15,9 +15,9 @@ const Center = styled.main`
   padding: ${({ theme }) => theme.spacing(5)};
 `
 
-const Field = styled.div`
+const Form = styled.form`
   display: grid;
-  gap: ${({ theme }) => theme.spacing(2)};
+  gap: ${({ theme }) => theme.spacing(4)};
 `
 
 export default function LoginForm() {
@@ -65,8 +65,8 @@ export default function LoginForm() {
           <CardTitle>Iniciar sesión</CardTitle>
           <CardDescription>Accede para gestionar tus reservas y servicios.</CardDescription>
         </CardHeader>
-        <form onSubmit={onSubmit} noValidate>
-          <CardContent>
+        <CardContent>
+          <Form onSubmit={onSubmit} noValidate>
             <Field>
               <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="tucorreo@ejemplo.com" required />
@@ -76,16 +76,18 @@ export default function LoginForm() {
               <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required />
             </Field>
             {error && <FormMessage tone="error">{error}</FormMessage>}
-          </CardContent>
-          <CardFooter>
-            <Button type="submit" disabled={loading}>{loading ? 'Accediendo…' : 'Entrar'}</Button>
-            <FormMessage>
-              ¿No tienes cuenta? <Link to="/registro">Regístrate</Link>
-            </FormMessage>
-            <Button type="button" $minimal onClick={onResetPassword}>Recuperar contraseña</Button>
-            {resetInfo && <FormMessage tone="success">{resetInfo}</FormMessage>}
-          </CardFooter>
-        </form>
+            <Button type="submit" disabled={loading} variant="primary" fullWidth>
+              {loading ? 'Accediendo…' : 'Entrar'}
+            </Button>
+          </Form>
+        </CardContent>
+        <CardFooter>
+          <FormMessage>
+            ¿No tienes cuenta? <Link to="/registro">Regístrate</Link>
+          </FormMessage>
+          <Button type="button" $minimal onClick={onResetPassword}>Recuperar contraseña</Button>
+          {resetInfo && <FormMessage tone="success">{resetInfo}</FormMessage>}
+        </CardFooter>
       </Card>
     </Center>
   )

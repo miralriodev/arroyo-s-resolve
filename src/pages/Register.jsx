@@ -22,9 +22,9 @@ const Center = styled.main`
   }
 `
 
-const Field = styled.div`
+const Form = styled.form`
   display: grid;
-  gap: ${({ theme }) => theme.spacing(2)};
+  gap: ${({ theme }) => theme.spacing(4)};
 `
 
 const Checklist = styled.ul`
@@ -89,12 +89,12 @@ export default function Register() {
           <CardDescription>Ingresa tu correo y una contraseña segura.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={onSubmit} style={{ display: 'grid', gap: 16 }}>
-            <Field>
+          <Form onSubmit={onSubmit}>
+            <div>
               <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nombre@ejemplo.com" required />
-            </Field>
-            <Field>
+            </div>
+            <div>
               <Label htmlFor="password">Contraseña</Label>
               <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required />
               <Checklist aria-live="polite">
@@ -115,19 +115,19 @@ export default function Register() {
                   ].filter(Boolean).join(', ')}
                 </small>
               )}
-            </Field>
-            <Field>
+            </div>
+            <div>
               <Label htmlFor="role">Tipo de cuenta</Label>
               <Select id="role" value={role} onChange={(e) => setRole(e.target.value)}>
                 <option value="visitor">Huésped (por defecto)</option>
                 <option value="host">Anfitrión (host)</option>
               </Select>
               <small style={{ color: '#555' }}>Las cuentas se crean por defecto como huésped.</small>
-            </Field>
+            </div>
             <Button type="submit" disabled={loading || !allValid}>{loading ? 'Registrando…' : 'Registrarse'}</Button>
             {error && <FormMessage tone="error">{error}</FormMessage>}
             {info && <FormMessage tone="success">{info}</FormMessage>}
-          </form>
+          </Form>
         </CardContent>
         <CardFooter>
           <small>
