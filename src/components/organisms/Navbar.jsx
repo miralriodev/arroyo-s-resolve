@@ -15,7 +15,7 @@ const Bar = styled.nav`
   grid-template-areas: 'left center right';
   align-items: center;
   padding: ${({ theme }) => `${theme.spacing(4)} ${theme.spacing(8.5)}`};
-  background: ${({ theme }) => theme.colors.surface};
+  background: #fb8500;
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
   gap: ${({ theme }) => theme.spacing(3)};
   @media (max-width: ${({ theme }) => theme.breakpoints.md}) {
@@ -330,7 +330,7 @@ export function Navbar() {
       </MenuButton>
 
       <Brand to="/">
-        <LogoImg src="/icons/cabin-logo.jpg" alt="Logo" />
+        <LogoImg src="/icons/caliyoo.png" alt="Logo" />
         <span>CALI YOO</span>
       </Brand>
 
