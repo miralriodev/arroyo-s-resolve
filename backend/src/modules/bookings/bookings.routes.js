@@ -16,4 +16,4 @@ router.get('/', requireAuth, controller.listMine);
 // Listar reservas de alojamientos del anfitrión
 router.get('/host', requireAuth, requireRole(['host', 'admin']), controller.listHost);
 
-export default router;
+export default router;

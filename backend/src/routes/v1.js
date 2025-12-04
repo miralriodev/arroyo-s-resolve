@@ -21,4 +21,4 @@ router.use('/reviews', reviewsRoutes);
 import adminRoutes from '../modules/admin/admin.routes.js';
 router.use('/admin', adminRoutes);
 
-export default router;
+export default router;
