@@ -15,7 +15,7 @@ const Bar = styled.nav`
   grid-template-areas: 'left center right';
   align-items: center;
   padding: ${({ theme }) => `${theme.spacing(4)} ${theme.spacing(8.5)}`};
-  background: ${({ theme }) => theme.colors.surface};
+  background: ${({ theme }) => theme.colors.primary};
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
   gap: ${({ theme }) => theme.spacing(3)};
   @media (max-width: ${({ theme }) => theme.breakpoints.md}) {
@@ -30,13 +30,13 @@ const Brand = styled(NavLink)`
   align-items: center;
   gap: ${({ theme }) => theme.spacing(2)};
   font-weight: 700;
-  color: ${({ theme }) => theme.colors.text};
+  color: ${({ theme }) => theme.colors.textLight};
   text-decoration: none;
   span { display: none; }
   @media (min-width: ${({ theme }) => theme.breakpoints.md}) {
     grid-area: left;
     justify-self: start;
-    span { display: inline; color: ${({ theme }) => theme.colors.text}; }
+    span { display: inline; color: ${({ theme }) => theme.colors.textLight}; }
   }
 `
 
@@ -54,7 +54,7 @@ const Nav = styled.div`
     justify-content: center;
     gap: ${({ theme }) => theme.spacing(7)};
     a {
-      color: ${({ theme }) => theme.colors.text};
+      color: ${({ theme }) => theme.colors.textLight};
       text-decoration: none;
       &:hover { text-decoration: underline; text-underline-offset: 3px; }
       &.active { text-decoration: underline; text-underline-offset: 3px; }
