@@ -1,3 +1,4 @@
+// Este middleware se encarga de manejar los errores de la aplicación.
 function errorHandler(err, req, res, next) {
   const status = typeof err?.status === 'number' ? err.status : 500;
   const message = err?.message || 'Error interno';

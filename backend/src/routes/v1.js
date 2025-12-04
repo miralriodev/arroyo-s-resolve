@@ -1,4 +1,5 @@
 import express from 'express';
+console.log('Loading v1 routes...');
 const router = express.Router();
 
 // Rutas de módulos
