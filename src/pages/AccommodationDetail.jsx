@@ -64,13 +64,25 @@ export default function AccommodationDetail() {
     padding: ${({ theme }) => theme.spacing(4)};
   `
 
+  const ImageGallery = styled.div`
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: ${({ theme }) => theme.spacing(2)};
+    margin-bottom: ${({ theme }) => theme.spacing(4)};
+  `
+
   const Image = styled.img`
     width: 100%;
-    max-height: 420px;
+    height: 100%;
     object-fit: cover;
     border-radius: ${({ theme }) => theme.radius.md};
     border: 1px solid ${({ theme }) => theme.colors.border};
-    background: #fff;
+    cursor: pointer;
+    transition: transform 0.2s ease-in-out;
+
+    &:hover {
+      transform: scale(1.05);
+    }
   `
 
   const MetaRow = styled.div`
@@ -89,7 +101,14 @@ export default function AccommodationDetail() {
     background: #fff;
   `
 
-  const HostHeader = styled.div`
+  const InfoGrid = styled.div`
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: ${({ theme }) => theme.spacing(4)};
+    margin-top: ${({ theme }) => theme.spacing(4)};
+  `
+
+  const HostInfo = styled.div`
     display: flex;
     align-items: center;
     gap: ${({ theme }) => theme.spacing(2)};
@@ -216,23 +235,29 @@ export default function AccommodationDetail() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {(() => {
-            const imgs = Array.isArray(acc.images) ? acc.images : []
-            const url = imgs.length > 0 ? imgs[Math.min(activeImg, imgs.length - 1)].url : acc.image_url
-            return url ? <Image src={url} alt={acc.title} /> : null
-          })()}
-          {Array.isArray(acc.images) && acc.images.length > 1 && (
-            <div style={{ display: 'flex', gap: 8, marginTop: 8, overflowX: 'auto' }}>
-              {acc.images.map((im, idx) => (
-                <button key={idx} onClick={() => setActiveImg(idx)} aria-label={`Imagen ${idx+1}`} style={{ padding: 0, border: activeImg===idx ? '2px solid #111' : '1px solid #e5e7eb', borderRadius: 8, background: '#fff' }}>
-                  <img src={im.url} alt={`mini ${idx+1}`} style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 8 }} />
-                </button>
-              ))}
+          <ImageGallery>
+            {Array.isArray(acc.images) && acc.images.length > 0 ? (
+              acc.images.map((img, idx) => (
+                <Image src={img.url} alt={`${acc.title} ${idx + 1}`} key={img.id} onClick={() => setActiveImg(idx)} />
+              ))
+            ) : (
+              <Image src={acc.image_url} alt={acc.title} />
+            )}
+          </ImageGallery>
+          <InfoGrid>
+            <div>
+              <Heading as="h3" level={3}>Sobre este lugar</Heading>
+              <p>{acc.description}</p>
             </div>
-          )}
-          {acc.description && (
-            <p>{acc.description}</p>
-          )}
+            <div>
+              <Heading as="h3" level={3}>Anfitrión</Heading>
+              <HostInfo>
+                <HostAvatar src={acc.host.avatar_url} alt={acc.host.name} />
+                <span>{acc.host.name}</span>
+              </HostInfo>
+            </div>
+          </InfoGrid>
+
           <MetaRow>
             <span>Tipo: {acc.property_type || '-'}</span>
             {Array.isArray(acc.amenities) && acc.amenities.length > 0 && (
@@ -241,11 +266,49 @@ export default function AccommodationDetail() {
           </MetaRow>
         </CardContent>
         <CardFooter>
-          <Heading as="h3" level={3}>Reservar</Heading>
+          <Button onClick={book} disabled={bookingStatus === 'loading'} variant="primary" fullWidth>
+            {bookingStatus === 'loading' ? 'Reservando...' : 'Reservar'}
+          </Button>
+          {bookingStatus && bookingStatus !== 'loading' && <FormMessage>{bookingStatus}</FormMessage>}
         </CardFooter>
-      </Card>
+      </BookingCard>
 
-      <Card aria-label="Reserva">
+      {bookingModal && (
+        <ModalBackdrop onClick={() => setBookingModal(null)}>
+          <ModalSheet ref={modalRef} role="dialog" aria-modal="true" aria-labelledby="booking-title" onClick={(e) => e.stopPropagation()}>
+            <Heading id="booking-title" as="h2" level={2}>Reserva confirmada</Heading>
+            <p>Tu reserva se ha realizado con éxito.</p>
+            <Table>
+              <TableRow>
+                <TableHeader>Alojamiento</TableHeader>
+                <TableCell>{bookingModal.accommodation.title}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableHeader>Entrada</TableHeader>
+                <TableCell>{new Date(bookingModal.start_date).toLocaleDateString()}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableHeader>Salida</TableHeader>
+                <TableCell>{new Date(bookingModal.end_date).toLocaleDateString()}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableHeader>Huéspedes</TableHeader>
+                <TableCell>{bookingModal.guests}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableHeader>Precio total</TableHeader>
+                <TableCell>${bookingModal.total_price}</TableCell>
+              </TableRow>
+            </Table>
+            <Button ref={closeRef} onClick={() => setBookingModal(null)}>Cerrar</Button>
+          </ModalSheet>
+        </ModalBackdrop>
+      )}
+
+  <BookingCard aria-label="Reserva">
+        <CardHeader>
+          <CardTitle>Reservar</CardTitle>
+        </CardHeader>
         <CardContent>
           <PillGroup cols={3}>
             <PillCell>
