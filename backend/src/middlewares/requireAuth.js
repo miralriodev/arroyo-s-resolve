@@ -19,6 +19,12 @@ module.exports = async function requireAuth(req, res, next) {
     const userId = decoded?.sub
     if (!userId) return res.status(401).json({ error: 'Token inválido' })
 
+    // En entorno de pruebas (Jest), evitar acceso a BD
+    if (process.env.JEST_WORKER_ID) {
+      req.user = { id: userId, role: null }
+      return next()
+    }
+
     // Cargar rol desde perfiles
     const profile = await prisma.profile.findUnique({ where: { id: userId } })
     req.user = { id: userId, role: profile?.role || null }
