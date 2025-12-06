@@ -23,7 +23,7 @@ router.use('/admin', adminRoutes);
 
 // Salud del API
 router.get('/health', (req, res) => {
-  res.json({ status: 'ok', version: 'v1' });
+  res.json({ status: 'ok', version: 'v11111' });
 });
 
 module.exports = router;
